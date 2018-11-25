@@ -1,6 +1,6 @@
 /*
  * retunr userAgent
- *  1: Internet Explorer
+ *  1: ie
  *  2: edge
  *  3: chrome
  *  4: safari
@@ -12,17 +12,17 @@ function getUserAgent() {
   var userAgent = window.navigator.userAgent.toLowerCase();
   
   if(userAgent.indexOf('msie') != -1 || userAgent.indexOf('trident') != -1) {
-      return 1;
+      return "ie";
   } else if(userAgent.indexOf('edge') != -1) {
-      return 2;
+      return "edge";
   } else if(userAgent.indexOf('chrome') != -1) {
-      return 3;
+      return "chrome";
   } else if(userAgent.indexOf('safari') != -1) {
-      return 4;
+      return "safari";
   } else if(userAgent.indexOf('firefox') != -1) {
-      return 5;
+      return "firefox";
   } else if(userAgent.indexOf('opera') != -1) {
-      return 6;
+      return "opera";
   } else {
       return null;
   }
