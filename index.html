@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Craft Blocks by @sgidon: 8th Wall Web: A-FRAME</title>
+
+    <style type="text/css">
+    body {
+      user-select:none;
+      -webkit-user-select:none;
+      -moz-user-select:none;
+      -khtml-user-select:none;
+      -webkit-user-drag:none;
+      -khtml-user-drag:none;
+    }
+    
+    #recenter {
+      position:absolute;
+      width:100px;
+      height:40px;
+      bottom:10px;
+      left:5px;
+      z-index:100;
+    }
+
+    #colorPicker {
+      position:absolute;
+      width:100px;
+      height:40px;
+      right:5px;
+      bottom:10px;
+      z-index:100;
+    }
+
+    #colorSelector {
+      position:absolute;
+      width:100px;
+      height:40px;
+      right:5px;
+      bottom:30px;
+      z-index:100;
+    }
+    </style>
+
+    <script src="https://cdn.8thwall.com/web/aframe/8frame-0.8.2.min.js"></script>
+
+    <!-- 8thWall Web - Replace the app key here with your own app key -->
+    <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
+
+    <!-- user script -->
+    <script src="./script.js"></script>
+
+    <script>
+
+      AFRAME.registerComponent('collider-check', {
+        dependencies: ['raycaster'],
+      
+        init: function () {
+
+	        var el = this.el;
+	        var data = this.data;
+
+          const scene = this.el.sceneEl
+          const clickTime = 300; // msec
+          const intervalTime = 100; // msec
+          
+          const button = document.querySelector("#recenter");
+          const colorPicker = document.querySelector("#colorPicker");
+          
+          button.addEventListener('click', () => {
+            scene.emit('recenter', {});
+          })
+
+          scene.addEventListener('touchstart', () => {
+            data.touchStartTime = new Date();
+          })
+          
+          scene.addEventListener('touchend', () => {
+            if ((new Date() - data.touchStartTime) < clickTime && data.pos) {
+              let box = document.createElement("a-box")
+              box.className = "box";
+              box.setAttribute("color", colorPicker.value);
+              box.setAttribute("position", data.pos);
+              box.setAttribute("scale", "1.01 1.01 1.01");
+              scene.appendChild(box);
+            }
+            data.touchStartTime = '';
+            data.flgRmBox = false;
+          })
+
+          data.target = document.querySelector("#target");
+          data.marker = document.querySelector("#marker");
+          data.offsetY = data.marker.getAttribute("scale").y/2;
+
+          // debug function
+          this.el.addEventListener('raycaster-intersection', function (e) {
+            console.log('Player hit something!');
+            console.log(e);
+            console.log(e.detail.intersections);
+          });
+          
+          // main loop
+          setInterval(function() {
+            el.components.raycaster.refreshObjects();
+            let intersection = getNearestIntersection(el.components.raycaster.intersections);
+            if (intersection) {
+              if (data.touchStartTime) {
+                if (!data.flgRmBox && (new Date() - data.touchStartTime) > clickTime) {
+                  console.log(intersection.object.el);
+                  if (intersection.object.el.className == 'box') {
+                    intersection.object.el.parentNode.removeChild(intersection.object.el);
+                  }
+                  data.flgRmBox = true;
+                }
+              } else {
+                let pos = intersection.point;
+                pos.x = Math.round(pos.x);
+                pos.y = Math.round(pos.y) + data.offsetY;
+                pos.z = Math.round(pos.z);
+                data.marker.setAttribute("position", pos);
+                data.pos = pos;
+              }
+            } else {
+              data.pos = "";
+            }
+	        }, intervalTime)
+
+          // get target intersection
+          function getNearestIntersection(intersections) {
+            for (var i = 0, l = intersections.length; i < l; i++) {
+                // ignore cursor itself to avoid flicker && ignore "ignore-ray" class
+                if (data.target === intersections[i].object.el || intersections[i].object.el.classList.contains("ignore-ray")) { continue; }
+                return intersections[i];
+            }
+            return null;
+          }
+        }
+      });
+    </script>
+
+    <script>
+      window.onload = function() {
+        console.log("test");
+      }
+    </script>
+
+  </head>
+  <body>
+    <a-scene xrweb>
+
+      <a-camera position="0 8 8">
+        <a-cursor id="target" raycaster="objects: .collidable, .box, .floor" collider-check></a-cursor>
+      </a-camera>
+
+      <a-entity
+        light="type: directional;
+               castShadow: true;
+               intensity: 0.8;
+               shadowCameraTop: 7;
+               shadowMapHeight: 1024;
+               shadowMapWidth: 1024;"
+        position="1 4.3 2.5">
+      </a-entity>
+
+      <a-entity
+        light="type: directional; castShadow: false; intensity: 0.5;"
+        position="-0.8 3 1.85">
+      </a-entity>
+
+      <a-light type="ambient" intensity="1"></a-light>
+
+      <a-plane class="floor" rotation="-90 0 0" width=10 height=10 opacity=0.5></a-plane>
+      <a-box id="marker" class="non-collidable" color="red" opacity=0.2 position="0 999 0"></a-box>
+      
+    </a-scene>
+
+    <input type="button" id="recenter" value="Recenter">
+    <input type="color" id="colorPicker" value="#0000FF">
+    <select id="colorSelector" name="colorselector">
+      <option value="#000000" style="color:#FF0000">白</option>
+    </select>
+      
+  </body>
+</html>
