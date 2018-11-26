@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Craft Blocks by @sgidon: 8th Wall Web: A-FRAME</title>
-
-    <style type="text/css">
+<head>
+  <meta charset="utf-8">
+  <title>CraftBlocks by @sgidon: 8th Wall Web: A-FRAME</title>
+  <link rel="stylesheet" href="./css/bootstrap.min.css">
+  <link rel="stylesheet" href="./css/bootstrap-select.css">
+  <style type="text/css">
     body {
       user-select:none;
       -webkit-user-select:none;
@@ -14,171 +15,363 @@
       -khtml-user-drag:none;
     }
     
-    #recenter {
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    
+    select#menuSelector {
       position:absolute;
-      width:100px;
+      width:120px;
       height:40px;
-      bottom:10px;
+      top:10px;
       left:5px;
       z-index:100;
     }
-
+    
+    select#blockSelector {
+      position:absolute;
+      width:120px;
+      height:40px;
+      bottom:10px;
+      left: 5px;
+      z-index:100;
+      background-size:contain;
+      background-repeat:no-repeat;
+      text-indent: 45px;
+    }
+  
+    #recenter {
+      position:absolute;
+      width:80px;
+      height:40px;
+      bottom:10px;
+      left: 0;
+      right: 0;
+      z-index:100;
+      margin: auto;
+    }
+  
     #colorPicker {
       position:absolute;
-      width:100px;
+      width:120px;
+      height:40px;
+      right:5px;
+      bottom:10px;
+      z-index:100;
+    }
+  
+    select#colorSelector {
+      position:absolute;
+      width:120px;
       height:40px;
       right:5px;
       bottom:10px;
       z-index:100;
     }
 
-    #colorSelector {
+    #shotButton {
       position:absolute;
-      width:100px;
-      height:40px;
-      right:5px;
-      bottom:30px;
+      width:80px;
+      height:80px;
+      bottom:10px;
+      left: 0;
+      right: 0;
       z-index:100;
+      margin: auto;
+      visibility: hidden;
     }
-    </style>
+  
+  </style>
 
-    <script src="https://cdn.8thwall.com/web/aframe/8frame-0.8.2.min.js"></script>
+  <script src="https://cdn.8thwall.com/web/aframe/8frame-0.8.2.min.js"></script>
+<!-- local dev only
+  <script src="./js/8frame-v0.8.2.min.js"></script>
+-->
+  <!-- 8thWall Web - Replace the app key here with your own app key -->
+  <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
+  <!-- user script -->
+  <script src="./js/script.js"></script>
 
-    <!-- 8thWall Web - Replace the app key here with your own app key -->
-    <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
+  <script>
+    //Global
+    const _COLOR_BLOCK_IMG="colorblocks.jpg"
+    var _f_shotMode = false;
+    
+    // 各部品はGLOBALに持つようにしてみた
+    var menuSelector;
+    var blockSelector;
+    var colorSelector;
+    var colorPicker;
+    var recenterButton;
+    var shotButton;
+    var cvs;
+    var ctx;
+    var imgLink = document.createElement("a");
 
-    <!-- user script -->
-    <script src="./script.js"></script>
+    // Component
+    AFRAME.registerComponent('collider-check', {
+      dependencies: ['raycaster'],
+    
+      init: function () {
 
-    <script>
+        var el = this.el;
+        var data = this.data;
 
-      AFRAME.registerComponent('collider-check', {
-        dependencies: ['raycaster'],
-      
-        init: function () {
+        const scene = this.el.sceneEl
+        const clickTime = 300; // msec
+        const intervalTime = 100; // msec
+        
+        const button = document.querySelector("#recenter");
+        const colorPicker = document.querySelector("#colorPicker");
+        const blockSelector = document.querySelector("#blockSelector");
+        
+        button.addEventListener('click', () => {
+          scene.emit('recenter', {});
+        })
 
-	        var el = this.el;
-	        var data = this.data;
-
-          const scene = this.el.sceneEl
-          const clickTime = 300; // msec
-          const intervalTime = 100; // msec
+        scene.addEventListener('touchstart', () => {
+          if (_f_shotMode) {
+            changeMode();
+            return true;
+          }
           
-          const button = document.querySelector("#recenter");
-          const colorPicker = document.querySelector("#colorPicker");
-          
-          button.addEventListener('click', () => {
-            scene.emit('recenter', {});
-          })
-
-          scene.addEventListener('touchstart', () => {
-            data.touchStartTime = new Date();
-          })
-          
-          scene.addEventListener('touchend', () => {
-            if ((new Date() - data.touchStartTime) < clickTime && data.pos) {
-              let box = document.createElement("a-box")
-              box.className = "box";
+          data.touchStartTime = new Date();
+        })
+        
+        scene.addEventListener('touchend', () => {
+          if ((new Date() - data.touchStartTime) < clickTime && data.pos) {
+            let box = document.createElement("a-box");
+            box.className = "block";
+            if (blockSelector.value == _COLOR_BLOCK_IMG) {
               box.setAttribute("color", colorPicker.value);
-              box.setAttribute("position", data.pos);
-              box.setAttribute("scale", "1.01 1.01 1.01");
-              scene.appendChild(box);
+              box.setAttribute("material","shader:standard");
+            } else {
+              box.setAttribute("material","shader:standard; src:url(./images/" + blockSelector.value + ")");
             }
-            data.touchStartTime = '';
-            data.flgRmBox = false;
-          })
+            box.setAttribute("position", data.pos);
+            box.setAttribute("scale", "1.01 1.01 1.01");
+            scene.appendChild(box);
+          }
+          data.touchStartTime = '';
+          data.flgRmBox = false;
+        })
 
-          data.target = document.querySelector("#target");
-          data.marker = document.querySelector("#marker");
-          data.offsetY = data.marker.getAttribute("scale").y/2;
+        data.target = document.querySelector("#target");
+        data.marker = document.querySelector("#marker");
+        data.offsetY = data.marker.getAttribute("scale").y/2;
 
-          // debug function
-          this.el.addEventListener('raycaster-intersection', function (e) {
-            console.log('Player hit something!');
-            console.log(e);
-            console.log(e.detail.intersections);
-          });
-          
-          // main loop
-          setInterval(function() {
-            el.components.raycaster.refreshObjects();
-            let intersection = getNearestIntersection(el.components.raycaster.intersections);
-            if (intersection) {
-              if (data.touchStartTime) {
-                if (!data.flgRmBox && (new Date() - data.touchStartTime) > clickTime) {
-                  console.log(intersection.object.el);
-                  if (intersection.object.el.className == 'box') {
-                    intersection.object.el.parentNode.removeChild(intersection.object.el);
-                  }
-                  data.flgRmBox = true;
+        // debug function
+        this.el.addEventListener('raycaster-intersection', function (e) {
+          console.log('Player hit something!');
+          console.log(e);
+          console.log(e.detail.intersections);
+        });
+        
+        // main loop
+        setInterval(function() {
+          el.components.raycaster.refreshObjects();
+          let intersection = getNearestIntersection(el.components.raycaster.intersections);
+          if (intersection) {
+            if (data.touchStartTime) {
+              if (!data.flgRmBox && (new Date() - data.touchStartTime) > clickTime) {
+                console.log(intersection.object.el);
+                if (intersection.object.el.className == 'block') {
+                  intersection.object.el.parentNode.removeChild(intersection.object.el);
                 }
-              } else {
-                let pos = intersection.point;
-                pos.x = Math.round(pos.x);
-                pos.y = Math.round(pos.y) + data.offsetY;
-                pos.z = Math.round(pos.z);
-                data.marker.setAttribute("position", pos);
-                data.pos = pos;
+                data.flgRmBox = true;
               }
             } else {
-              data.pos = "";
+              let pos = intersection.point;
+              pos.x = Math.round(pos.x);
+              pos.y = Math.round(pos.y) + data.offsetY;
+              pos.z = Math.round(pos.z);
+              data.marker.setAttribute("position", pos);
+              data.pos = pos;
             }
-	        }, intervalTime)
-
-          // get target intersection
-          function getNearestIntersection(intersections) {
-            for (var i = 0, l = intersections.length; i < l; i++) {
-                // ignore cursor itself to avoid flicker && ignore "ignore-ray" class
-                if (data.target === intersections[i].object.el || intersections[i].object.el.classList.contains("ignore-ray")) { continue; }
-                return intersections[i];
-            }
-            return null;
+          } else {
+            data.pos = "";
           }
+        }, intervalTime)
+
+        // get target intersection
+        function getNearestIntersection(intersections) {
+          for (var i = 0, l = intersections.length; i < l; i++) {
+              // ignore cursor itself to avoid flicker && ignore "ignore-ray" class
+              if (data.target === intersections[i].object.el || intersections[i].object.el.classList.contains("ignore-ray")) { continue; }
+              return intersections[i];
+          }
+          return null;
         }
-      });
-    </script>
-
-    <script>
-      window.onload = function() {
-        console.log("test");
       }
-    </script>
+    });
 
-  </head>
-  <body>
-    <a-scene xrweb>
+    // 画面制御処理
+    window.onload = function() {
+      console.log("onload finish");
+      cvs = document.getElementsByTagName("canvas")[0];
+      ctx = cvs.getContext("2d");
 
-      <a-camera position="0 8 8">
-        <a-cursor id="target" raycaster="objects: .collidable, .box, .floor" collider-check></a-cursor>
-      </a-camera>
+      menuSelector = document.querySelector("#menuSelector");
+      blockSelector = document.querySelector("#blockSelector");
+      colorSelector = document.querySelector("#colorSelector");
+      colorPicker = document.querySelector("#colorPicker");
+      recenterButton = document.querySelector("#recenter");
+      shotButton = document.querySelector("#shotButton");
 
-      <a-entity
-        light="type: directional;
-               castShadow: true;
-               intensity: 0.8;
-               shadowCameraTop: 7;
-               shadowMapHeight: 1024;
-               shadowMapWidth: 1024;"
-        position="1 4.3 2.5">
-      </a-entity>
+      // menu selectorの動作
+      menuSelector.onchange = function(e) {
+        console.log(this.value);
+        if (this.value == "menu") {
+          return true;
+        } else if (this.value == "shot") {
+          console.log("shot");
+          changeMode();
+          this.value="menu";
+          return true;
+        }
 
-      <a-entity
-        light="type: directional; castShadow: false; intensity: 0.5;"
-        position="-0.8 3 1.85">
-      </a-entity>
+        this.value="menu";
+      }
 
-      <a-light type="ambient" intensity="1"></a-light>
-
-      <a-plane class="floor" rotation="-90 0 0" width=10 height=10 opacity=0.5></a-plane>
-      <a-box id="marker" class="non-collidable" color="red" opacity=0.2 position="0 999 0"></a-box>
+      // block selectorの見栄え
+      blockSelector.onchange = function(e) {
+        this.style.backgroundImage="url(./images/" + this.value + ")";
+      }
       
-    </a-scene>
+      // iOS用：Safariの場合はColorPickerではなくColorSelectorを表示する。
+      if (getUserAgent() == "safari") {
+        console.log("safari");
+        colorPicker.style.display = "none";
+        
+        colorSelector.onchange = function(e) {
+          this.style.background=this.value;
+          this.style.color=this.value;
+          colorPicker.value=this.value;
 
-    <input type="button" id="recenter" value="Recenter">
-    <input type="color" id="colorPicker" value="#0000FF">
-    <select id="colorSelector" name="colorselector">
-      <option value="#000000" style="color:#FF0000">白</option>
-    </select>
+          // 色変更時は自動的にblockSelectorを色ブロックに変更する。
+          blockSelector.value = _COLOR_BLOCK_IMG;
+          blockSelector.style.backgroundImage="url(./images/" + _COLOR_BLOCK_IMG + ")";
+        }
+      } else {
+        console.log("not safari");
+        colorSelector.style.display = "none";
+        
+        colorPicker.onchange = function(e) {
+          // 色変更時は自動的にblockSelectorを色ブロックに変更する。
+          blockSelector.value = _COLOR_BLOCK_IMG;
+          blockSelector.style.backgroundImage="url(./images/" + _COLOR_BLOCK_IMG + ")";
+        }
+      }
       
-  </body>
+      // 撮影ボタンクリック動作
+      shotButton.onclick = function(e) {
+        console.log("onClick shot");
+        getScreenShot();
+        changeMode();
+      }
+
+    }
+    
+    function getScreenShot() {
+      let filename = "craftblocks"+ getFormatDateTime()+".png";
+
+      let base64 = cvs.toDataURL();
+      let blob = base64toBlob(base64);
+      if (window.navigator.msSaveBlob) {
+        window.navigator.msSaveBlob(blob, filename);
+      } else {
+        imgLink.href = window.URL.createObjectURL(blob);
+        imgLink.download = filename;
+        imgLink.click();
+      }
+    }
+    
+    function changeMode() {
+      // mode change
+      _f_shotMode = !_f_shotMode;
+
+      let statusOfShotElement = _f_shotMode ? "visible" : "hidden";
+      let statusOfCraftElement = _f_shotMode ? "hidden" : "visible";
+      
+      // shot mode element
+      shotButton.style.visibility = statusOfShotElement;
+      
+      // craft mode element
+      menuSelector.style.visibility = statusOfCraftElement;
+      blockSelector.style.visibility = statusOfCraftElement;
+      if (getUserAgent() == "safari") {
+        colorSelector.style.visibility = statusOfCraftElement;
+      } else {
+        colorPicker.style.visibility = statusOfCraftElement;
+      }
+      recenterButton.style.visibility = statusOfCraftElement;
+
+      // scene entity
+      document.querySelector("#target").setAttribute("visible", !_f_shotMode);
+      document.querySelector("#marker").setAttribute("visible", !_f_shotMode);
+
+    }
+    
+  </script>
+
+</head>
+<body>
+  <a-scene xrweb>
+
+    <a-camera position="0 8 8">
+      <a-cursor id="target" raycaster="objects: .collidable, .block, .floor" collider-check></a-cursor>
+    </a-camera>
+
+    <a-plane class="floor" rotation="-90 0 0" width=10 height=10 opacity=0.5></a-plane>
+    <a-box id="marker" class="non-collidable" color="white" position="0 999 0" wireframe="true" opacity="0.5"></a-box>
+    
+  </a-scene>
+  
+  <!-- メニュー -->
+  <select id="menuSelector" name="menuselector" style="visibility:hidden">
+    <option value="menu" selected>メニュー</option>
+    <option value="save">セーブ</option>
+    <option value="load">ロード</option>
+    <option value="shot">写真撮影</option>
+  </select>
+
+  <!-- ブロックの選択ダイアログ -->
+  <select id="blockSelector" name="blockselector" style="background-image:url(./images/colorblocks.jpg);">
+    <option value="cobblestone.png" style="background-image:url(./images/cobblestone.png);">石</option>
+    <option value="diamond.png" style="background-image:url(./images/diamond.png);">ダイヤ</option>
+    <option value="dirt.jpg" style="background-image:url(./images/dirt.jpg);">土</option>
+    <option value="leaves.png" style="background-image:url(./images/leaves.png);">葉</option>
+    <option value="mason-brick.png" style="background-image:url(./images/mason-brick.png);">レンガ</option>
+    <option value="sand.png" style="background-image:url(./images/sand.png);">砂</option>
+    <option value="wood-log.png" style="background-image:url(./images/wood-log.png);">木</option>
+    <option value="wooden-plank.png" style="background-image:url(./images/wooden-plank.png);">板</option>
+    <option value="colorblocks.jpg" style="background-image:url(./images/colorblocks.jpg);" selected>色ブロック</option>
+  </select>
+  
+  <!-- センター位置の補正ボタン -->
+  <input type="button" id="recenter" value="位置修正">
+
+  <!-- カラーブロックの色選択ダイアログ。iOS用とそれ以外用がある -->
+  <input type="color" id="colorPicker" value="#0000FF">
+  <select id="colorSelector" name="colorselector" style="background:#0000FF; color:#0000FF">
+    <option value="#0000FF" style="background:#0000FF; color:#0000FF" selected>BLUE</option>
+    <option value="#FFFFFF" style="background:#FFFFFF; color:#FFFFFF">WHITE</option>
+    <option value="#FFC0CB" style="background:#FFC0CB; color:#FFC0CB">PINK</option>
+    <option value="#EE82EE" style="background:#EE82EE; color:#EE82EE">VIOLET</option>
+    <option value="#FFFF00" style="background:#FFFF00; color:#FFFF00">YELLOW</option>
+    <option value="#FFA500" style="background:#FFA500; color:#FFA500">ORANGE</option>
+    <option value="#808080" style="background:#808080; color:#808080">GRAY</option>
+    <option value="#A52A2A" style="background:#A52A2A; color:#A52A2A">BROWN</option>
+    <option value="#008000" style="background:#008000; color:#008000">GREEN</option>
+    <option value="#FF0000" style="background:#FF0000; color:#FF0000">RED</option>
+    <option value="#00FF00" style="background:#00FF00; color:#00FF00">LIME</option>
+    <option value="#000000" style="background:#000000; color:#000000">BLACK</option>
+  </select>
+    
+  <!-- 写真撮影用ボタン -->
+  <img src="./images/button_shot.png" id="shotButton">
+
+</body>
 </html>
