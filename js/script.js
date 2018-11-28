@@ -1,12 +1,13 @@
 // --------------------
-// return userAgent
-//  1: ie
-//  2: edge
-//  3: chrome
-//  4: sdate_afari
-//  5: firefox
-//  6: opera
-//  null: unknow
+// get userAgent
+// return:
+//   ie
+//   edge
+//   chrome
+//   sdate_afari
+//   firefox
+//   opera
+//   null: unknow
 // --------------------
 function getUserAgent() {
   var userAgent = window.navigator.userAgent.toLowerCase();
@@ -29,7 +30,8 @@ function getUserAgent() {
 }
 
 // --------------------
-// return formated date(yyyymmddHH24MISS)
+// get formated date(yyyymmddHH24MISS)
+// return: new Date() formated "yyyymmddHH24MISS"
 // --------------------
 function getFormatDateTime() {
   let nowDate = new Date();
@@ -51,6 +53,7 @@ function getFormatDateTime() {
 
 // --------------------
 // convert Base64 to Blob
+// return: blob
 // --------------------
 function base64toBlob(base64)
 {
@@ -63,4 +66,32 @@ function base64toBlob(base64)
 	}
 	var blob = new Blob([buf], { type: mime });
 	return blob;
+}
+
+// --------------------
+// get URL parameter
+// return: array[key] = value
+// --------------------
+function getQueryString() {
+  if (1 < document.location.search.length) {
+    // 最初の1文字 (?記号) を除いた文字列を取得する
+    var query = document.location.search.substring(1);
+
+    // クエリの区切り記号 (&) で文字列を配列に分割する
+    var parameters = query.split('&');
+
+    var result = new Object();
+    for (var i = 0; i < parameters.length; i++) {
+      // パラメータ名とパラメータ値に分割する
+      var element = parameters[i].split('=');
+
+      var paramName = decodeURIComponent(element[0]);
+      var paramValue = decodeURIComponent(element[1]);
+
+      // パラメータ名をキーとして連想配列に追加する
+      result[paramName] = decodeURIComponent(paramValue);
+    }
+    return result;
+  }
+  return null;
 }

@@ -3,8 +3,6 @@
 <head>
   <meta charset="utf-8">
   <title>CraftBlocks by @sgidon: 8th Wall Web: A-FRAME</title>
-  <link rel="stylesheet" href="./css/bootstrap.min.css">
-  <link rel="stylesheet" href="./css/bootstrap-select.css">
   <style type="text/css">
     body {
       user-select:none;
@@ -23,7 +21,7 @@
     
     select#menuSelector {
       position:absolute;
-      width:120px;
+      width:100px;
       height:40px;
       top:10px;
       left:5px;
@@ -32,9 +30,9 @@
     
     select#blockSelector {
       position:absolute;
-      width:120px;
+      width:100px;
       height:40px;
-      bottom:10px;
+      bottom:20px;
       left: 5px;
       z-index:100;
       background-size:contain;
@@ -46,7 +44,7 @@
       position:absolute;
       width:80px;
       height:40px;
-      bottom:10px;
+      bottom:20px;
       left: 0;
       right: 0;
       z-index:100;
@@ -55,19 +53,19 @@
   
     #colorPicker {
       position:absolute;
-      width:120px;
+      width:100px;
       height:40px;
       right:5px;
-      bottom:10px;
+      bottom:20px;
       z-index:100;
     }
   
     select#colorSelector {
       position:absolute;
-      width:120px;
+      width:100px;
       height:40px;
       right:5px;
-      bottom:10px;
+      bottom:20px;
       z-index:100;
     }
 
@@ -75,12 +73,26 @@
       position:absolute;
       width:80px;
       height:80px;
-      bottom:10px;
+      bottom:20px;
       left: 0;
       right: 0;
       z-index:100;
       margin: auto;
       visibility: hidden;
+    }
+    
+    div#debugConsole {
+      position:absolute;
+      width:75%;
+      height:75%;
+      top:5px;
+      right:5px;
+      z-index:200;
+      opacity:0.8;
+      background-color:gray;
+      color:white;
+      visibility:hidden;
+      overflow:auto;
     }
   
   </style>
@@ -123,11 +135,11 @@
         const clickTime = 300; // msec
         const intervalTime = 100; // msec
         
-        const button = document.querySelector("#recenter");
-        const colorPicker = document.querySelector("#colorPicker");
-        const blockSelector = document.querySelector("#blockSelector");
+        recenterButton = document.querySelector("#recenter");
+        colorPicker = document.querySelector("#colorPicker");
+        blockSelector = document.querySelector("#blockSelector");
         
-        button.addEventListener('click', () => {
+        recenterButton.addEventListener('click', () => {
           scene.emit('recenter', {});
         })
 
@@ -146,28 +158,28 @@
             box.className = "block";
             if (blockSelector.value == _COLOR_BLOCK_IMG) {
               box.setAttribute("color", colorPicker.value);
-              box.setAttribute("material","shader:standard");
+              box.setAttribute("material","shader","standard");
             } else {
-              box.setAttribute("material","shader:standard; src:url(./images/" + blockSelector.value + ")");
+              box.setAttribute("material","shader","standard");
+              box.setAttribute("material","src",'#' + blockSelector.value);
             }
             box.setAttribute("position", data.pos);
             box.setAttribute("scale", "1.01 1.01 1.01");
+
+            //debug infomation start
+            console.log("blockSelector.value:" + blockSelector.value);
+            //debug infomation end
+
             scene.appendChild(box);
           }
           data.touchStartTime = '';
           data.flgRmBox = false;
+          
         })
 
         data.target = document.querySelector("#target");
         data.marker = document.querySelector("#marker");
         data.offsetY = data.marker.getAttribute("scale").y/2;
-
-        // debug function
-        this.el.addEventListener('raycaster-intersection', function (e) {
-          console.log('Player hit something!');
-          console.log(e);
-          console.log(e.detail.intersections);
-        });
         
         // main loop
         setInterval(function() {
@@ -176,7 +188,6 @@
           if (intersection) {
             if (data.touchStartTime) {
               if (!data.flgRmBox && (new Date() - data.touchStartTime) > clickTime) {
-                console.log(intersection.object.el);
                 if (intersection.object.el.className == 'block') {
                   intersection.object.el.parentNode.removeChild(intersection.object.el);
                 }
@@ -219,6 +230,18 @@
       colorPicker = document.querySelector("#colorPicker");
       recenterButton = document.querySelector("#recenter");
       shotButton = document.querySelector("#shotButton");
+
+      // Query String
+      var queryString = getQueryString();
+
+      // Debug Console
+      if (queryString && queryString["debug"] == "true") {
+        let debugConsole = document.querySelector("#debugConsole");
+        debugConsole.style.visibility = "visible";
+        console.log = function(log) {
+          debugConsole.innerHTML += log + "<br>";
+        }
+      }
 
       // menu selectorの動作
       menuSelector.onchange = function(e) {
@@ -267,6 +290,7 @@
       
       // 撮影ボタンクリック動作
       shotButton.onclick = function(e) {
+        // not work well...
         console.log("onClick shot");
         getScreenShot();
         changeMode();
@@ -277,7 +301,9 @@
     function getScreenShot() {
       let filename = "craftblocks"+ getFormatDateTime()+".png";
 
-      let base64 = cvs.toDataURL();
+      let screenshot = document.querySelector("a-scene").components.screenshot
+      screenshot.resize(window.width, window.height);
+      let base64 = screenshot.getCanvas("perspective").toDataURL();
       let blob = base64toBlob(base64);
       if (window.navigator.msSaveBlob) {
         window.navigator.msSaveBlob(blob, filename);
@@ -319,6 +345,16 @@
 </head>
 <body>
   <a-scene xrweb>
+    <a-assets>
+      <img id="cobblestone.png" src="./images/cobblestone.png">
+      <img id="diamond.png" src="./images/diamond.png">
+      <img id="dirt.png" src="./images/dirt.png">
+      <img id="leaves.png" src="./images/leaves.png">
+      <img id="mason-brick.png" src="./images/mason-brick.png">
+      <img id="sand.png" src="./images/sand.png">
+      <img id="wood-log.png" src="./images/wood-log.png">
+      <img id="wooden-plank.png" src="./images/wooden-plank.png">
+    </a-assets>
 
     <a-camera position="0 8 8">
       <a-cursor id="target" raycaster="objects: .collidable, .block, .floor" collider-check></a-cursor>
@@ -338,40 +374,43 @@
   </select>
 
   <!-- ブロックの選択ダイアログ -->
-  <select id="blockSelector" name="blockselector" style="background-image:url(./images/colorblocks.jpg);">
-    <option value="cobblestone.png" style="background-image:url(./images/cobblestone.png);">石</option>
-    <option value="diamond.png" style="background-image:url(./images/diamond.png);">ダイヤ</option>
-    <option value="dirt.jpg" style="background-image:url(./images/dirt.jpg);">土</option>
-    <option value="leaves.png" style="background-image:url(./images/leaves.png);">葉</option>
-    <option value="mason-brick.png" style="background-image:url(./images/mason-brick.png);">レンガ</option>
-    <option value="sand.png" style="background-image:url(./images/sand.png);">砂</option>
-    <option value="wood-log.png" style="background-image:url(./images/wood-log.png);">木</option>
-    <option value="wooden-plank.png" style="background-image:url(./images/wooden-plank.png);">板</option>
-    <option value="colorblocks.jpg" style="background-image:url(./images/colorblocks.jpg);" selected>色ブロック</option>
+  <select id="blockSelector" name="blockselector" style="background-color:white; background-image:url(./images/colorblocks.jpg);">
+    <option value="cobblestone.png">石</option>
+    <option value="diamond.png">ダイヤ</option>
+    <option value="dirt.png">土</option>
+    <option value="leaves.png">葉</option>
+    <option value="mason-brick.png">レンガ</option>
+    <option value="sand.png">砂</option>
+    <option value="wood-log.png">木</option>
+    <option value="wooden-plank.png">板</option>
+    <option value="colorblocks.jpg" selected>色付き</option>
   </select>
   
   <!-- センター位置の補正ボタン -->
-  <input type="button" id="recenter" value="位置修正">
+  <input type="button" id="recenter" value="再配置">
 
   <!-- カラーブロックの色選択ダイアログ。iOS用とそれ以外用がある -->
   <input type="color" id="colorPicker" value="#0000FF">
   <select id="colorSelector" name="colorselector" style="background:#0000FF; color:#0000FF">
-    <option value="#0000FF" style="background:#0000FF; color:#0000FF" selected>BLUE</option>
-    <option value="#FFFFFF" style="background:#FFFFFF; color:#FFFFFF">WHITE</option>
-    <option value="#FFC0CB" style="background:#FFC0CB; color:#FFC0CB">PINK</option>
-    <option value="#EE82EE" style="background:#EE82EE; color:#EE82EE">VIOLET</option>
-    <option value="#FFFF00" style="background:#FFFF00; color:#FFFF00">YELLOW</option>
-    <option value="#FFA500" style="background:#FFA500; color:#FFA500">ORANGE</option>
-    <option value="#808080" style="background:#808080; color:#808080">GRAY</option>
-    <option value="#A52A2A" style="background:#A52A2A; color:#A52A2A">BROWN</option>
-    <option value="#008000" style="background:#008000; color:#008000">GREEN</option>
-    <option value="#FF0000" style="background:#FF0000; color:#FF0000">RED</option>
-    <option value="#00FF00" style="background:#00FF00; color:#00FF00">LIME</option>
-    <option value="#000000" style="background:#000000; color:#000000">BLACK</option>
+    <option value="#0000FF" style="background:#0000FF; color:#0000FF" selected>ブルー</option>
+    <option value="#FFFFFF" style="background:#FFFFFF; color:#FFFFFF">ホワイト</option>
+    <option value="#FFC0CB" style="background:#FFC0CB; color:#FFC0CB">ピンク</option>
+    <option value="#EE82EE" style="background:#EE82EE; color:#EE82EE">バイオレット</option>
+    <option value="#FFFF00" style="background:#FFFF00; color:#FFFF00">イエロー</option>
+    <option value="#FFA500" style="background:#FFA500; color:#FFA500">オレンジ</option>
+    <option value="#808080" style="background:#808080; color:#808080">グレー</option>
+    <option value="#A52A2A" style="background:#A52A2A; color:#A52A2A">ブラウン</option>
+    <option value="#008000" style="background:#008000; color:#008000">グリーン</option>
+    <option value="#FF0000" style="background:#FF0000; color:#FF0000">レッド</option>
+    <option value="#00FF00" style="background:#00FF00; color:#00FF00">ライム</option>
+    <option value="#000000" style="background:#000000; color:#000000">ブラック</option>
   </select>
     
   <!-- 写真撮影用ボタン -->
   <img src="./images/button_shot.png" id="shotButton">
+
+  <!-- debug console -->
+  <div id="debugConsole"></div>
 
 </body>
 </html>
