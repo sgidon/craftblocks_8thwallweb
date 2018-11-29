@@ -108,7 +108,8 @@
 
   <script>
     //Global
-    const _COLOR_BLOCK_IMG="colorblocks.jpg"
+    const _COLOR_BLOCK_IMG="colorSelector.png"
+    const _WATER_IMG="water.png";
     var _f_shotMode = false;
     
     // 各部品はGLOBALに持つようにしてみた
@@ -162,6 +163,9 @@
             } else {
               box.setAttribute("material","shader","standard");
               box.setAttribute("material","src",'#' + blockSelector.value);
+              if (blockSelector.value == _WATER_IMG) {
+                box.setAttribute("opacity", 0.9);
+              }
             }
             box.setAttribute("position", data.pos);
             box.setAttribute("scale", "1.01 1.01 1.01");
@@ -186,6 +190,7 @@
           el.components.raycaster.refreshObjects();
           let intersection = getNearestIntersection(el.components.raycaster.intersections);
           if (intersection) {
+            data.marker.setAttribute("visible", true);
             if (data.touchStartTime) {
               if (!data.flgRmBox && (new Date() - data.touchStartTime) > clickTime) {
                 if (intersection.object.el.className == 'block') {
@@ -203,6 +208,7 @@
             }
           } else {
             data.pos = "";
+            data.marker.setAttribute("visible", false);
           }
         }, intervalTime)
 
@@ -346,14 +352,18 @@
 <body>
   <a-scene xrweb>
     <a-assets>
-      <img id="cobblestone.png" src="./images/cobblestone.png">
-      <img id="diamond.png" src="./images/diamond.png">
-      <img id="dirt.png" src="./images/dirt.png">
+      <img id="water.png" src="./images/water.png">
+      <img id="grass.png" src="./images/grass.png">
       <img id="leaves.png" src="./images/leaves.png">
-      <img id="mason-brick.png" src="./images/mason-brick.png">
+      <img id="qrcode.png" src="./images/qrcode.png">
       <img id="sand.png" src="./images/sand.png">
+      <img id="stone2.png" src="./images/stone2.png">
+      <img id="stone3.png" src="./images/stone3.png">
+      <img id="stone.png" src="./images/stone.png">
+      <img id="tatami2.png" src="./images/tatami2.png">
+      <img id="tatami.png" src="./images/tatami.png">
+      <img id="wood-panel.png" src="./images/wood-panel.png">
       <img id="wood-log.png" src="./images/wood-log.png">
-      <img id="wooden-plank.png" src="./images/wooden-plank.png">
     </a-assets>
 
     <a-camera position="0 8 8">
@@ -362,7 +372,7 @@
 
     <a-plane class="floor" rotation="-90 0 0" width=10 height=10 opacity=0.5></a-plane>
     <a-box id="marker" class="non-collidable" color="white" position="0 999 0" wireframe="true" opacity="0.5"></a-box>
-    
+        
   </a-scene>
   
   <!-- メニュー -->
@@ -374,19 +384,21 @@
   </select>
 
   <!-- ブロックの選択ダイアログ -->
-  <select id="blockSelector" name="blockselector" style="background-color:white; background-image:url(./images/colorblocks.jpg);">
-    <option value="cobblestone.png">石</option>
-    <option value="diamond.png">ダイヤ</option>
-    <option value="dirt.png">土</option>
-    <option value="leaves.png">葉</option>
-    <option value="mason-brick.png">レンガ</option>
+  <select id="blockSelector" name="blockselector" style="background-color:white; background-image:url(./images/colorSelector.png);">
+    <option value="water.png">水</option>
     <option value="sand.png">砂</option>
+    <option value="wood-panel.png">木板</option>
+    <option value="tatami.png">畳</option>
+    <option value="stone.png">砂利</option>
+    <option value="stone2.png">石垣</option>
+    <option value="stone3.png">石畳</option>
+    <option value="grass.png">草</option>
     <option value="wood-log.png">木</option>
-    <option value="wooden-plank.png">板</option>
-    <option value="colorblocks.jpg" selected>色付き</option>
+    <option value="leaves.png">葉っぱ</option>
+    <option value="colorSelector.png" selected>色付き</option>
+    <option value="qrcode.png">QRcode</option>
   </select>
   
-  <!-- センター位置の補正ボタン -->
   <input type="button" id="recenter" value="再配置">
 
   <!-- カラーブロックの色選択ダイアログ。iOS用とそれ以外用がある -->
