@@ -95,3 +95,56 @@ function getQueryString() {
   }
   return null;
 }
+
+// --------------------
+// set video stream
+// --------------------
+function getVideoStream(video) {
+  navigator.getUserMedia = navigator.getUserMedia ||
+                           navigator.webkitGetUserMedia ||
+                           navigator.mozGetUserMedia;
+  
+  if (navigator.getUserMedia) {
+    navigator.getUserMedia({ audio: false, video: true },
+      function(stream) {
+         var video = document.querySelector('video');
+         video.src = window.URL.createObjectURL(stream);
+         video.onloadedmetadata = function(e) {
+           video.play();
+         };
+      },
+      function(err) {
+         console.log("The following error occurred: " + err.name);
+      }
+    );
+  } else {
+    console.log("getUserMedia not supported");
+  }
+}
+
+// --------------------
+//フルスクリーンに切り替え
+// --------------------
+function enterFullscreen() {
+  var x = document.documentElement;
+  if (x.webkitRequestFullScreen) {
+    x.webkitRequestFullScreen();
+  } else if (x.mozRequestFullScreen) {
+  x.mozRequestFullScreen();
+  } else {
+    x.requestFullScreen();
+  }
+}
+
+// --------------------
+//フルスクリーンを解除
+// --------------------
+function exitFullscreen() {
+  if (document.webkitCancelFullScreen) {
+    document.webkitCancelFullScreen();
+  } else if (document.mozCancelFullScreen) {
+    document.mozCancelFullScreen();
+  } else {
+    document.exitFullscreen();
+  }
+}

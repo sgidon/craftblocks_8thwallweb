@@ -21,7 +21,7 @@
     
     select#menuSelector {
       position:absolute;
-      width:100px;
+      width:130px;
       height:40px;
       top:10px;
       left:5px;
@@ -30,7 +30,7 @@
     
     select#blockSelector {
       position:absolute;
-      width:100px;
+      width:130px;
       height:40px;
       bottom:20px;
       left: 5px;
@@ -42,18 +42,16 @@
   
     #recenter {
       position:absolute;
-      width:80px;
+      width:130px;
       height:40px;
-      bottom:20px;
-      left: 0;
-      right: 0;
+      right:5px;
+      top:10px;
       z-index:100;
-      margin: auto;
     }
   
     #colorPicker {
       position:absolute;
-      width:100px;
+      width:130px;
       height:40px;
       right:5px;
       bottom:20px;
@@ -62,7 +60,7 @@
   
     select#colorSelector {
       position:absolute;
-      width:100px;
+      width:130px;
       height:40px;
       right:5px;
       bottom:20px;
@@ -76,7 +74,7 @@
       bottom:20px;
       left: 0;
       right: 0;
-      z-index:100;
+      z-index:200;
       margin: auto;
       visibility: hidden;
     }
@@ -94,6 +92,16 @@
       visibility:hidden;
       overflow:auto;
     }
+    
+    video#imgPicker {
+      position:absolute;
+      width:90%;
+      height:90%;
+      top:5%;
+      left:5%;
+      z-index:100;
+      visibility:hidden;
+    }
   
   </style>
 
@@ -110,15 +118,24 @@
     //Global
     const _COLOR_BLOCK_IMG="colorSelector.png"
     const _WATER_IMG="water.png";
+    const _QRCODE_IMG="qrcode.png";
+    
+    // 画面の状態
+    const _MODE_CRAFT=0;
+    const _MODE_SHOT=1;
+    const _MODE_CREATE=2;
+    
     var _f_shotMode = false;
     
     // 各部品はGLOBALに持つようにしてみた
     var menuSelector;
+    var buttonRecenter;
     var blockSelector;
     var colorSelector;
     var colorPicker;
-    var recenterButton;
     var shotButton;
+    var imgPicker;
+    var scene;
     var cvs;
     var ctx;
     var imgLink = document.createElement("a");
@@ -136,17 +153,20 @@
         const clickTime = 300; // msec
         const intervalTime = 100; // msec
         
-        recenterButton = document.querySelector("#recenter");
+        var blockList = document.createElement("a-entity");
+        scene.appendChild(blockList);
+        
         colorPicker = document.querySelector("#colorPicker");
         blockSelector = document.querySelector("#blockSelector");
+        buttonRecenter = document.querySelector("#recenter");
         
-        recenterButton.addEventListener('click', () => {
+        buttonRecenter.addEventListener('click', () => {
           scene.emit('recenter', {});
         })
-
+        
         scene.addEventListener('touchstart', () => {
           if (_f_shotMode) {
-            changeMode();
+            changeMode(_MODE_CRAFT);
             return true;
           }
           
@@ -174,11 +194,18 @@
             console.log("blockSelector.value:" + blockSelector.value);
             //debug infomation end
 
-            scene.appendChild(box);
+            blockList.appendChild(box);
           }
           data.touchStartTime = '';
           data.flgRmBox = false;
           
+        })
+        
+        scene.addEventListener('deleteAll',() => {
+          console.log("emit: deleteAll");
+          blockList.parentNode.removeChild(blockList);
+          blockList = document.createElement("a-entity");
+          scene.appendChild(blockList);
         })
 
         data.target = document.querySelector("#target");
@@ -190,7 +217,15 @@
           el.components.raycaster.refreshObjects();
           let intersection = getNearestIntersection(el.components.raycaster.intersections);
           if (intersection) {
-            data.marker.setAttribute("visible", true);
+            if (_f_shotMode == 0) {
+              if (intersection.object.el.getAttribute("material").src.id == _QRCODE_IMG) {
+                data.marker.setAttribute("visible", false);
+                data.target.setAttribute("visible", false);
+              } else {
+                data.marker.setAttribute("visible", true);
+                data.target.setAttribute("visible", true);
+              }
+            }
             if (data.touchStartTime) {
               if (!data.flgRmBox && (new Date() - data.touchStartTime) > clickTime) {
                 if (intersection.object.el.className == 'block') {
@@ -221,6 +256,7 @@
           }
           return null;
         }
+        
       }
     });
 
@@ -234,8 +270,11 @@
       blockSelector = document.querySelector("#blockSelector");
       colorSelector = document.querySelector("#colorSelector");
       colorPicker = document.querySelector("#colorPicker");
-      recenterButton = document.querySelector("#recenter");
       shotButton = document.querySelector("#shotButton");
+      imgPicker = document.querySelector("#imgPicker");
+      buttonRecenter = document.querySelector("#recenter");
+
+      scene = document.querySelector("a-scene");
 
       // Query String
       var queryString = getQueryString();
@@ -254,10 +293,26 @@
         console.log(this.value);
         if (this.value == "menu") {
           return true;
-        } else if (this.value == "shot") {
-          console.log("shot");
-          changeMode();
+        } else if (this.value == "new") {
+          var result = confirm("すべてのブロックを削除しますか？");
+          if (result) {
+            scene.emit('deleteAll');
+          }
           this.value="menu";
+          return true;
+        } else if (this.value == "recenter") {
+          scene.emit('recenter', {});
+          this.value="menu";
+          return true;
+        // } else if (this.value == "createBlock") {
+        //   // オリジナルブロック作成用VIDEO設定
+        //   getVideoStream(imgPicker);
+        //   changeMode(_MODE_CREATE);
+        //   this.value="menu";
+        //   return true;
+        } else if (this.value == "shot") {
+          this.value="menu";
+          changeMode(_MODE_SHOT);
           return true;
         }
 
@@ -299,7 +354,7 @@
         // not work well...
         console.log("onClick shot");
         getScreenShot();
-        changeMode();
+        changeMode(_MODE_CRAFT);
       }
 
     }
@@ -320,15 +375,14 @@
       }
     }
     
-    function changeMode() {
+    function changeMode(modeNum) {
       // mode change
-      _f_shotMode = !_f_shotMode;
-
+      _f_shotMode = modeNum == _MODE_CRAFT? 0 : 1;
       let statusOfShotElement = _f_shotMode ? "visible" : "hidden";
       let statusOfCraftElement = _f_shotMode ? "hidden" : "visible";
+      let statusOfCreateElement = modeNum == _MODE_CREATE ? "visible" : "hidden";
       
       // shot mode element
-      shotButton.style.visibility = statusOfShotElement;
       
       // craft mode element
       menuSelector.style.visibility = statusOfCraftElement;
@@ -338,11 +392,23 @@
       } else {
         colorPicker.style.visibility = statusOfCraftElement;
       }
-      recenterButton.style.visibility = statusOfCraftElement;
+      buttonRecenter.style.visibility = statusOfCraftElement;
+
+      // block create mode element
+      shotButton.style.visibility = statusOfCreateElement;
+      imgPicker.style.visibility = statusOfCreateElement;
 
       // scene entity
       document.querySelector("#target").setAttribute("visible", !_f_shotMode);
       document.querySelector("#marker").setAttribute("visible", !_f_shotMode);
+      document.querySelector("#floor").setAttribute("visible", !_f_shotMode);
+      
+      // screen controll
+      if (_f_shotMode) {
+        enterFullscreen();
+      } else {
+        exitFullscreen();
+      }
 
     }
     
@@ -370,17 +436,22 @@
       <a-cursor id="target" raycaster="objects: .collidable, .block, .floor" collider-check></a-cursor>
     </a-camera>
 
-    <a-plane class="floor" rotation="-90 0 0" width=10 height=10 opacity=0.5></a-plane>
+    <a-plane id="floor" class="floor" rotation="-90 0 0" width=10 height=10 opacity=0.5></a-plane>
     <a-box id="marker" class="non-collidable" color="white" position="0 999 0" wireframe="true" opacity="0.5"></a-box>
         
   </a-scene>
   
   <!-- メニュー -->
-  <select id="menuSelector" name="menuselector" style="visibility:hidden">
+  <select id="menuSelector" name="menuselector" style="background-color:white;">
     <option value="menu" selected>メニュー</option>
+    <option value="new">　ブロック全削除</option>
+<!--
+    <option value="recenter">　置き場所の移動</option>
+    <option value="createBlock">ブロック作成</option>
     <option value="save">セーブ</option>
     <option value="load">ロード</option>
-    <option value="shot">写真撮影</option>
+-->
+    <option value="shot">　スクショモード</option>
   </select>
 
   <!-- ブロックの選択ダイアログ -->
@@ -399,8 +470,8 @@
     <option value="qrcode.png">QRcode</option>
   </select>
   
-  <input type="button" id="recenter" value="再配置">
-
+  <input type="button" id="recenter" value="ここに移動する">
+  
   <!-- カラーブロックの色選択ダイアログ。iOS用とそれ以外用がある -->
   <input type="color" id="colorPicker" value="#0000FF">
   <select id="colorSelector" name="colorselector" style="background:#0000FF; color:#0000FF">
@@ -420,6 +491,9 @@
     
   <!-- 写真撮影用ボタン -->
   <img src="./images/button_shot.png" id="shotButton">
+
+  <!-- オリジナルブロック撮影用VIDEO -->
+  <video id="imgPicker"></video>
 
   <!-- debug console -->
   <div id="debugConsole"></div>
