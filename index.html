@@ -112,8 +112,12 @@
   <!-- 8thWall Web - Replace the app key here with your own app key -->
   <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
   <!-- GLTF Export -->
+<!--
   <script src="https://unpkg.com/aframe-gltf-exporter-component/dist/aframe-gltf-exporter-component.min.js"></script>
+-->
+  <script src="./js/aframe-gltf-exporter-component.js"></script>
   <!-- user script -->
+  <script src="./js/jszip.min.js"></script>
   <script src="./js/script.js"></script>
 
   <script>
@@ -452,11 +456,11 @@
       <img id="wood-log.png" src="./images/wood-log.png">
     </a-assets>
 
-    <a-camera position="0 8 8">
+    <a-camera position="0 20 20">
       <a-cursor id="target" raycaster="objects: .collidable, .block, .floor" collider-check></a-cursor>
     </a-camera>
 
-    <a-plane id="floor" class="floor" rotation="-90 0 0" width=10 height=10 opacity=0.5></a-plane>
+    <a-plane id="floor" class="floor" rotation="-90 0 0" width=25 height=25 opacity=0.5></a-plane>
     <a-box id="marker" class="non-collidable" color="white" position="0 999 0" wireframe="true" opacity="0.5"></a-box>
         
   </a-scene>
