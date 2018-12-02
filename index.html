@@ -111,6 +111,8 @@
 -->
   <!-- 8thWall Web - Replace the app key here with your own app key -->
   <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
+  <!-- GLTF Export -->
+  <script src="https://unpkg.com/aframe-gltf-exporter-component/dist/aframe-gltf-exporter-component.min.js"></script>
   <!-- user script -->
   <script src="./js/script.js"></script>
 
@@ -154,6 +156,7 @@
         const intervalTime = 100; // msec
         
         var blockList = document.createElement("a-entity");
+        blockList.id = "blockList";
         scene.appendChild(blockList);
         
         colorPicker = document.querySelector("#colorPicker");
@@ -205,7 +208,21 @@
           console.log("emit: deleteAll");
           blockList.parentNode.removeChild(blockList);
           blockList = document.createElement("a-entity");
+          blockList.id = "blockList";
           scene.appendChild(blockList);
+        })
+
+        scene.addEventListener('exportGltf',() => {
+          console.log("emit: exportGltf");
+          let options = {
+            trs: false,
+            onlyVisible: true,
+            truncateDrawRange: true,
+            binary: false,
+            forceIndices: false,
+            forcePowerOfTwoTextures: false
+          };
+          scene.systems['gltf-exporter'].export(blockList, options);
         })
 
         data.target = document.querySelector("#target");
@@ -314,8 +331,11 @@
           this.value="menu";
           changeMode(_MODE_SHOT);
           return true;
+        } else if (this.value == "gltf") {
+          this.value="menu";
+          scene.emit('exportGltf', {});
+          return true;
         }
-
         this.value="menu";
       }
 
@@ -446,12 +466,12 @@
     <option value="menu" selected>メニュー</option>
     <option value="new">　ブロック全削除</option>
 <!--
-    <option value="recenter">　置き場所の移動</option>
     <option value="createBlock">ブロック作成</option>
     <option value="save">セーブ</option>
     <option value="load">ロード</option>
 -->
     <option value="shot">　スクショモード</option>
+    <option value="gltf">　GLTF形式出力</option>
   </select>
 
   <!-- ブロックの選択ダイアログ -->

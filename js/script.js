@@ -148,3 +148,4 @@ function exitFullscreen() {
     document.exitFullscreen();
   }
 }
+
