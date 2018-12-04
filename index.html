@@ -460,10 +460,22 @@
           return true;
         } else if (this.value == "gltf") {
           this.value="menu";
+          if (getUserAgent() == "safari") {
+            var result = confirm("作成前にセーブしますか？");
+            if (result) {
+              scene.emit('save');
+            }
+          }
           scene.emit('exportGltf', {});
           return true;
         } else if (this.value == "glb") {
           this.value="menu";
+          if (getUserAgent() == "safari") {
+            var result = confirm("作成前にセーブしますか？");
+            if (result) {
+              scene.emit('save');
+            }
+          }
           scene.emit('exportGlb', {});
           return true;
         }
