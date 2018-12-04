@@ -21,7 +21,7 @@
     
     select#menuSelector {
       position:absolute;
-      width:130px;
+      width:80px;
       height:40px;
       top:10px;
       left:5px;
@@ -42,7 +42,7 @@
   
     #recenter {
       position:absolute;
-      width:130px;
+      width:80px;
       height:40px;
       right:5px;
       top:10px;
@@ -102,6 +102,27 @@
       z-index:100;
       visibility:hidden;
     }
+    
+    div#markerPos {
+      position:absolute;
+      width: 40%;
+      height: 30px;
+      top: 15px;
+      left: 30%;
+      z-index:100;
+      visibility:visible;
+      opacity:0.8;
+      background-color: white;
+      text-align:center;
+      vertical-align: middle;
+    }
+    
+    div#markerPos p {
+      position: relative;
+      -webkit-transform: translateY(-50%);
+      -ms-transform: translateY(-50%);
+      transform: translateY(-50%);
+    }
   
   </style>
 
@@ -111,13 +132,10 @@
 -->
   <!-- 8thWall Web - Replace the app key here with your own app key -->
   <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
-  <!-- GLTF Export -->
-<!--
-  <script src="https://unpkg.com/aframe-gltf-exporter-component/dist/aframe-gltf-exporter-component.min.js"></script>
--->
+  <!-- GLTF/GLB Export -->
   <script src="./js/aframe-gltf-exporter-component.js"></script>
-  <!-- user script -->
   <script src="./js/jszip.min.js"></script>
+  <!-- user script -->
   <script src="./js/script.js"></script>
 
   <script>
@@ -141,6 +159,7 @@
     var colorPicker;
     var shotButton;
     var imgPicker;
+    var markerPos;
     var scene;
     var cvs;
     var ctx;
@@ -166,6 +185,11 @@
         colorPicker = document.querySelector("#colorPicker");
         blockSelector = document.querySelector("#blockSelector");
         buttonRecenter = document.querySelector("#recenter");
+
+        markerPos = document.querySelector("#markerPos");
+        data.info = document.createElement("p");
+        data.info.id = "info";
+        markerPos.appendChild(data.info);
         
         buttonRecenter.addEventListener('click', () => {
           scene.emit('recenter', {});
@@ -197,10 +221,6 @@
             box.setAttribute("position", data.pos);
             box.setAttribute("scale", "1.01 1.01 1.01");
 
-            //debug infomation start
-            console.log("blockSelector.value:" + blockSelector.value);
-            //debug infomation end
-
             blockList.appendChild(box);
           }
           data.touchStartTime = '';
@@ -215,6 +235,75 @@
           blockList.id = "blockList";
           scene.appendChild(blockList);
         })
+        
+        scene.addEventListener('save',() => {
+          console.log("emit: save");
+          try {
+            let data = {};
+            data["datetime"] = new Date();
+            data["title"] = "";
+            data["comment"] = "";
+            data["list"] = [];
+            let list = document.getElementsByClassName("block");
+            
+            // とりあえず動いた。暫定的な書き方。
+            for (var i = 0; i < list.length; i++) {
+              let block = [];
+              const attr = ["class","color","material.shader","material.src","opacity","position","scale"];
+              block.push({class: (list[i].getAttribute("class") ? list[i].getAttribute("class") : "")});
+              block.push({color: (list[i].getAttribute("color") ? list[i].getAttribute("color") : "")});
+              block.push({materialShader: (list[i].getAttribute("material").shader ? list[i].getAttribute("material").shader : "")});
+              block.push({materialSrc: (list[i].getAttribute("material").src.id ? list[i].getAttribute("material").src.id : "")});
+              console.log(list[i].getAttribute("material").src);
+              console.log(list[i].getAttribute("material").src.id);
+              block.push({opacity: (list[i].getAttribute("opacity") ? list[i].getAttribute("opacity") : "")});
+              block.push({position: (list[i].getAttribute("position") ? list[i].getAttribute("position") : "")});
+              block.push({scale: (list[i].getAttribute("scale") ? list[i].getAttribute("scale") : "")});
+              data["list"].push(block);
+            }
+            localStorage.setItem("save1",JSON.stringify(data));
+          } catch(e) {
+            // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
+            alert("セーブに失敗しました。もう一度実行してください。");
+          }
+          // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
+          alert("セーブしました。");
+        })
+
+        scene.addEventListener('load',() => {
+          console.log("emit: load");
+          scene.emit("deleteAll");
+          
+          try {
+            let data = JSON.parse(localStorage.getItem("save1"));
+            let list = data["list"];
+            
+            // とりあえず動いた、暫定的な書き方。
+            // javascriptの配列<->JSONのやり方の理解が追いついてない。
+            // しかしなんてアホな書き方なんだ・・・
+            for (let i = 0; i < list.length; i++) {
+              let box = document.createElement("a-box");
+              box.className = list[i][0].clsss;
+              if (list[i][1].color != "") {
+                box.setAttribute("color", list[i][1].color);
+                box.setAttribute("material","shader",list[i][2].materialShader);
+              } else {
+                box.setAttribute("material","shader",list[i][2].materialShader);
+                box.setAttribute("material","src","#"+list[i][3].materialSrc);
+                box.setAttribute("opacity", list[i][4].opacity);
+              }
+              box.setAttribute("position", list[i][5].position);
+              box.setAttribute("scale", list[i][6].scale);
+  
+              blockList.appendChild(box);
+            }
+          } catch(e) {
+            // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
+            alert("ロードに失敗しました。もう一度実行してください。");
+          }
+          // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
+          alert("ロードしました。");
+        })
 
         scene.addEventListener('exportGltf',() => {
           console.log("emit: exportGltf");
@@ -223,6 +312,19 @@
             onlyVisible: true,
             truncateDrawRange: true,
             binary: false,
+            forceIndices: false,
+            forcePowerOfTwoTextures: false
+          };
+          scene.systems['gltf-exporter'].export(blockList, options);
+        })
+
+        scene.addEventListener('exportGlb',() => {
+          console.log("emit: exportGlb");
+          let options = {
+            trs: false,
+            onlyVisible: true,
+            truncateDrawRange: true,
+            binary: true,
             forceIndices: false,
             forcePowerOfTwoTextures: false
           };
@@ -257,14 +359,20 @@
             } else {
               let pos = intersection.point;
               pos.x = Math.round(pos.x);
-              pos.y = Math.round(pos.y) + data.offsetY;
+              pos.y = Math.round(pos.y - data.offsetY <= 0 ? 0 : pos.y - data.offsetY ) + data.offsetY;
               pos.z = Math.round(pos.z);
               data.marker.setAttribute("position", pos);
               data.pos = pos;
             }
+            if (data.pos) {
+              data.info.innerHTML = "X:"+ data.pos.x+" Y:" +(data.pos.y - data.offsetY)+" Z:"+data.pos.z;
+            } else {
+              data.info.innerHTML = "";
+            }
           } else {
             data.pos = "";
             data.marker.setAttribute("visible", false);
+            data.info.innerHTML = "";
           }
         }, intervalTime)
 
@@ -294,6 +402,7 @@
       shotButton = document.querySelector("#shotButton");
       imgPicker = document.querySelector("#imgPicker");
       buttonRecenter = document.querySelector("#recenter");
+      markerPos = document.querySelector("#markerPos");
 
       scene = document.querySelector("a-scene");
 
@@ -331,6 +440,20 @@
         //   changeMode(_MODE_CREATE);
         //   this.value="menu";
         //   return true;
+        } else if (this.value == "save") {
+          var result = confirm("セーブします。");
+          if (result) {
+            scene.emit('save');
+          }
+          this.value="menu";
+          return true;
+        } else if (this.value == "load") {
+          var result = confirm("ロードします。今のブロックは削除されます。");
+          if (result) {
+            scene.emit('load');
+          }
+          this.value="menu";
+          return true;
         } else if (this.value == "shot") {
           this.value="menu";
           changeMode(_MODE_SHOT);
@@ -338,6 +461,10 @@
         } else if (this.value == "gltf") {
           this.value="menu";
           scene.emit('exportGltf', {});
+          return true;
+        } else if (this.value == "glb") {
+          this.value="menu";
+          scene.emit('exportGlb', {});
           return true;
         }
         this.value="menu";
@@ -417,6 +544,7 @@
         colorPicker.style.visibility = statusOfCraftElement;
       }
       buttonRecenter.style.visibility = statusOfCraftElement;
+      markerPos.style.visibility = statusOfCraftElement;
 
       // block create mode element
       shotButton.style.visibility = statusOfCreateElement;
@@ -460,7 +588,7 @@
       <a-cursor id="target" raycaster="objects: .collidable, .block, .floor" collider-check></a-cursor>
     </a-camera>
 
-    <a-plane id="floor" class="floor" rotation="-90 0 0" width=25 height=25 opacity=0.5></a-plane>
+    <a-plane id="floor" class="floor" rotation="-90 0.01 0" width=25 height=25 opacity=0.5></a-plane>
     <a-box id="marker" class="non-collidable" color="white" position="0 999 0" wireframe="true" opacity="0.5"></a-box>
         
   </a-scene>
@@ -471,11 +599,12 @@
     <option value="new">　ブロック全削除</option>
 <!--
     <option value="createBlock">ブロック作成</option>
-    <option value="save">セーブ</option>
-    <option value="load">ロード</option>
 -->
+    <option value="save">　セーブ</option>
+    <option value="load">　ロード</option>
     <option value="shot">　スクショモード</option>
-    <option value="gltf">　GLTF形式出力</option>
+    <option value="gltf">　glTF 出力</option>
+    <option value="glb">　GLB 出力</option>
   </select>
 
   <!-- ブロックの選択ダイアログ -->
@@ -494,7 +623,7 @@
     <option value="qrcode.png">QRcode</option>
   </select>
   
-  <input type="button" id="recenter" value="ここに移動する">
+  <input type="button" id="recenter" value="ここに移動">
   
   <!-- カラーブロックの色選択ダイアログ。iOS用とそれ以外用がある -->
   <input type="color" id="colorPicker" value="#0000FF">
@@ -518,6 +647,9 @@
 
   <!-- オリジナルブロック撮影用VIDEO -->
   <video id="imgPicker"></video>
+
+  <!-- マーカー位置表示 -->
+  <div id="markerPos"></div>
 
   <!-- debug console -->
   <div id="debugConsole"></div>

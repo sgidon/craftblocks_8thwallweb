@@ -78,18 +78,21 @@
 
 	  download: function (blob, filename)
 	  {
-      // this.link.href = URL.createObjectURL( blob );
-      // this.link.download = filename;
-      // this.link.click();
-      var link = this.link;
-      var zip = new JSZip();
-      zip.file(filename, blob);
-      zip.generateAsync({type:"blob"})
-      .then(function(content) {
-          link.href = URL.createObjectURL(content)
-          link.download = "scene.zip";
-          link.click();
-      });
+	    if (getUserAgent() == "safari") {
+        var link = this.link;
+        var zip = new JSZip();
+        zip.file(filename, blob);
+        zip.generateAsync({type:"blob"})
+        .then(function(content) {
+            link.href = URL.createObjectURL(content)
+            link.download = "scene.zip";
+            link.click();
+        });
+	    } else {
+        this.link.href = URL.createObjectURL( blob );
+        this.link.download = filename;
+        this.link.click();
+	    }
 	  },
 
 	  downloadBinary: function (value, filename) {
