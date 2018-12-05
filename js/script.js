@@ -1,76 +1,82 @@
-var transWords = {en:
+var transWords = {
+  en:
   {
-  // menu selector
-  menuMenu:" menu",
-  menuNew: " - delete all",
-  menuSave:" - save",
-  menuLoad:" - load",
-  menuShot:" - shot mode",
-  menuFull:" - fullscreen",
-  menuGltf:" - export glTF",
-  menuGlb: " - export glb",
-  menuObj: " - export obj",
-  // block selector
-  blockWater:    "water",
-  blockSand:     "sand",
-  blockWoodPanel:"wood panel",
-  blockTatami:   "tatami",
-  blockGravel:   "gravel",
-  blockStonewall:"stone wall",
-  blockCobble:   "cobble",
-  blockGrass:    "grass",
-  blockWoodlog:  "wood log",
-  blockLeaf:     "leaf",
-  blockColor:    "color",
-  blockQrcode:   "qrcode",
-  // color selector
-  colorBlue:  "blue",
-  colorWhite: "white",
-  colorPink:  "pink",
-  colorViolet:"violet",
-  colorYellow:"yellow",
-  colorOrange:"orange",
-  colorGray:  "gray",
-  colorBrown: "brown",
-  colorGreen: "green",
-  colorRed:   "red",
-  colorLime:  "lime",
-  colorBlack: "black",
-  // infomation
-  info: "now loading...",
+    // menu selector
+    menuMenu:" menu",
+    menuNew: " - delete all",
+    menuSave:" - save",
+    menuLoad:" - load",
+    menuShot:" - shot mode",
+    menuFull:" - fullscreen",
+    menuGltf:" - export glTF",
+    menuGlb: " - export glb",
+    menuObj: " - export obj",
+    
+    // block selector
+    blockWater:    "water",
+    blockSand:     "sand",
+    blockWoodPanel:"wood panel",
+    blockTatami:   "tatami",
+    blockGravel:   "gravel",
+    blockStonewall:"stone wall",
+    blockCobble:   "cobble",
+    blockGrass:    "grass",
+    blockWoodlog:  "wood log",
+    blockLeaf:     "leaf",
+    blockColor:    "color",
+    blockQrcode:   "qrcode",
+    
+    // color selector
+    colorBlue:  "blue",
+    colorWhite: "white",
+    colorPink:  "pink",
+    colorViolet:"violet",
+    colorYellow:"yellow",
+    colorOrange:"orange",
+    colorGray:  "gray",
+    colorBrown: "brown",
+    colorGreen: "green",
+    colorRed:   "red",
+    colorLime:  "lime",
+    colorBlack: "black",
+    
+    // infomation
+    info: "now loading...",
   }
 };
 
-var transButtonWords = {en:
+var transButtonWords = {
+  en:
   {
-  // Recenter button
-  recenter: "recenter",
+    // Recenter button
+    recenter: "recenter",
   }
 };
 
-var transMessageWords = {en:
+var transMessageWords = {
+  en:
   {
-  deleteAll:   "Delete all blocks. Is it OK?",
-  saveConfirm: "Save it.",
-  saveSuccess: "Saved.",
-  saveFailure: "Saving failed. Please try again.",
-  loadConfirm: "Load it. ALl blocks are deleted.",
-  loadSuccess: "Loaded.",
-  loadFailure: "Loaing failed. Please try again.",
-  mdoelConfirm:"Save it before exporting?",
-  screenshotFailure:"Shooting failed. Please try again.",
+    deleteAll:   "Delete all blocks. Is it OK?",
+    saveConfirm: "Save it?",
+    saveSuccess: "Saved.",
+    saveFailure: "Saving failed. Please try again.",
+    loadConfirm: "Load it? All blocks are deleted.",
+    loadSuccess: "Loaded.",
+    loadFailure: "Loading failed. Please try again.",
+    mdoelConfirm:"Save it before exporting?",
+    screenshotFailure:"Shooting failed. Please try again.",
   },
   ja:
   {
-  deleteAll:   "すべてのブロックを削除しますか？",
-  saveConfirm: "セーブします。",
-  saveSuccess: "セーブしました。",
-  saveFailure: "セーブに失敗しました。もう一度実行してください。",
-  loadConfirm: "ロードします。今のブロックは削除されます。",
-  loadSuccess: "ロードしました。",
-  loadFailure: "ロードに失敗しました。もう一度実行してください。",
-  mdoelConfirm:"作成前にセーブしますか？",
-  screenshotFailure:"撮影に失敗しました。もう一度実行してください。",
+    deleteAll:   "すべてのブロックを削除しますか？",
+    saveConfirm: "セーブしますか？",
+    saveSuccess: "セーブしました。",
+    saveFailure: "セーブに失敗しました。もう一度実行してください。",
+    loadConfirm: "ロードしますか？今のブロックは削除されます。",
+    loadSuccess: "ロードしました。",
+    loadFailure: "ロードに失敗しました。もう一度実行してください。",
+    mdoelConfirm:"作成前にセーブしますか？",
+    screenshotFailure:"撮影に失敗しました。もう一度実行してください。",
   },
 };
 

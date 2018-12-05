@@ -265,6 +265,7 @@
             }
             localStorage.setItem("save1",JSON.stringify(data));
           } catch(e) {
+            console.log(e);
             // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
             alert(transMessageWords[_LANG]["saveFailure"]);
           }
@@ -301,6 +302,7 @@
             }
           } catch(e) {
             // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
+            console.log(e);
             alert(transMessageWords[_LANG]["loadFailure"]);
           }
           // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
@@ -444,6 +446,11 @@
       // 言語設定
       if (_LANG != "ja") {
         translateWords("en");
+      }
+
+      // Safariの場合、カメラモードを削除する。
+      if (getUserAgent() == "safari") {
+        document.querySelector("#menuShot").parentElement.removeChild(document.querySelector("#menuShot"));
       }
 
       // menu selectorの動作
