@@ -26,6 +26,7 @@
       top:10px;
       left:5px;
       z-index:100;
+      text-indent: 5px;
     }
     
     select#blockSelector {
@@ -79,6 +80,17 @@
       visibility: hidden;
     }
     
+    #cancelButton {
+      position:absolute;
+      width:60px;
+      height:60px;
+      bottom:30px;
+      left: 20px;
+      z-index:200;
+      margin: auto;
+      visibility: hidden;
+    }
+    
     div#debugConsole {
       position:absolute;
       width:75%;
@@ -91,16 +103,6 @@
       color:white;
       visibility:hidden;
       overflow:auto;
-    }
-    
-    video#imgPicker {
-      position:absolute;
-      width:90%;
-      height:90%;
-      top:5%;
-      left:5%;
-      z-index:100;
-      visibility:hidden;
     }
     
     div#markerPos {
@@ -134,6 +136,7 @@
   <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
   <!-- GLTF/GLB Export -->
   <script src="./js/aframe-gltf-exporter-component.js"></script>
+  <script src="./js/OBJExporter.js"></script>
   <script src="./js/jszip.min.js"></script>
   <!-- user script -->
   <script src="./js/script.js"></script>
@@ -143,11 +146,12 @@
     const _COLOR_BLOCK_IMG="colorSelector.png"
     const _WATER_IMG="water.png";
     const _QRCODE_IMG="qrcode.png";
+    const _LANG=(getLang().slice(0,2)=="ja" ? "ja" : "en");
     
     // 画面の状態
     const _MODE_CRAFT=0;
     const _MODE_SHOT=1;
-    const _MODE_CREATE=2;
+    const _MODE_FULL=2;
     
     var _f_shotMode = false;
     
@@ -158,7 +162,7 @@
     var colorSelector;
     var colorPicker;
     var shotButton;
-    var imgPicker;
+    var cancelButton;
     var markerPos;
     var scene;
     var cvs;
@@ -187,9 +191,7 @@
         buttonRecenter = document.querySelector("#recenter");
 
         markerPos = document.querySelector("#markerPos");
-        data.info = document.createElement("p");
-        data.info.id = "info";
-        markerPos.appendChild(data.info);
+        data.info = document.querySelector("#info");
         
         buttonRecenter.addEventListener('click', () => {
           scene.emit('recenter', {});
@@ -264,10 +266,10 @@
             localStorage.setItem("save1",JSON.stringify(data));
           } catch(e) {
             // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
-            alert("セーブに失敗しました。もう一度実行してください。");
+            alert(transMessageWords[_LANG]["saveFailure"]);
           }
           // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
-          alert("セーブしました。");
+          alert(transMessageWords[_LANG]["saveSuccess"]);
         })
 
         scene.addEventListener('load',() => {
@@ -283,7 +285,7 @@
             // しかしなんてアホな書き方なんだ・・・
             for (let i = 0; i < list.length; i++) {
               let box = document.createElement("a-box");
-              box.className = list[i][0].clsss;
+              box.className = list[i][0].class;
               if (list[i][1].color != "") {
                 box.setAttribute("color", list[i][1].color);
                 box.setAttribute("material","shader",list[i][2].materialShader);
@@ -299,10 +301,10 @@
             }
           } catch(e) {
             // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
-            alert("ロードに失敗しました。もう一度実行してください。");
+            alert(transMessageWords[_LANG]["loadFailure"]);
           }
           // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
-          alert("ロードしました。");
+          alert(transMessageWords[_LANG]["loadSuccess"]);
         })
 
         scene.addEventListener('exportGltf',() => {
@@ -331,60 +333,81 @@
           scene.systems['gltf-exporter'].export(blockList, options);
         })
 
+        scene.addEventListener('exportObj',() => {
+          console.log("emit: exportObj");
+          scene.systems['gltf-exporter'].exportObj(blockList);
+        })
+
+        scene.addEventListener('screenshotready', (e) => {
+          let filename = "craftblocks"+ getFormatDateTime()+".png";
+          imgLink.href = 'data:image/jpeg;base64,' + event.detail;
+          imgLink.download = filename;
+          imgLink.click();
+        })
+
+        scene.addEventListener('screenshoterror', (e) => {
+          console.log("screen shot error");
+          alert(transMessageWords[_LANG]["screenshotFailure"]);
+        })
+        
         data.target = document.querySelector("#target");
         data.marker = document.querySelector("#marker");
         data.offsetY = data.marker.getAttribute("scale").y/2;
         
         // main loop
-        setInterval(function() {
-          el.components.raycaster.refreshObjects();
-          let intersection = getNearestIntersection(el.components.raycaster.intersections);
-          if (intersection) {
-            if (_f_shotMode == 0) {
-              if (intersection.object.el.getAttribute("material").src.id == _QRCODE_IMG) {
-                data.marker.setAttribute("visible", false);
-                data.target.setAttribute("visible", false);
-              } else {
-                data.marker.setAttribute("visible", true);
-                data.target.setAttribute("visible", true);
-              }
-            }
-            if (data.touchStartTime) {
-              if (!data.flgRmBox && (new Date() - data.touchStartTime) > clickTime) {
-                if (intersection.object.el.className == 'block') {
-                  intersection.object.el.parentNode.removeChild(intersection.object.el);
+        scene.addEventListener('camerastatuschange', (e) => {
+          if (e.detail.status == "hasVideo") {
+            setInterval(function() {
+              el.components.raycaster.refreshObjects();
+              let intersection = getNearestIntersection(el.components.raycaster.intersections);
+              if (intersection) {
+                if (_f_shotMode == 0) {
+                  if (intersection.object.el.getAttribute("material").src.id == _QRCODE_IMG) {
+                    data.marker.setAttribute("visible", false);
+                    data.target.setAttribute("visible", false);
+                  } else {
+                    data.marker.setAttribute("visible", true);
+                    data.target.setAttribute("visible", true);
+                  }
                 }
-                data.flgRmBox = true;
+                if (data.touchStartTime) {
+                  if (!data.flgRmBox && (new Date() - data.touchStartTime) > clickTime) {
+                    if (intersection.object.el.className == 'block') {
+                      intersection.object.el.parentNode.removeChild(intersection.object.el);
+                    }
+                    data.flgRmBox = true;
+                  }
+                } else {
+                  let pos = intersection.point;
+                  pos.x = Math.round(pos.x);
+                  pos.y = Math.round(pos.y - data.offsetY <= 0 ? 0 : pos.y - data.offsetY ) + data.offsetY;
+                  pos.z = Math.round(pos.z);
+                  data.marker.setAttribute("position", pos);
+                  data.pos = pos;
+                }
+                if (data.pos) {
+                  data.info.innerHTML = "X:"+ data.pos.x+" Y:" +(data.pos.y - data.offsetY)+" Z:"+data.pos.z;
+                } else {
+                  data.info.innerHTML = "";
+                }
+              } else {
+                data.pos = "";
+                data.marker.setAttribute("visible", false);
+                data.info.innerHTML = "";
               }
-            } else {
-              let pos = intersection.point;
-              pos.x = Math.round(pos.x);
-              pos.y = Math.round(pos.y - data.offsetY <= 0 ? 0 : pos.y - data.offsetY ) + data.offsetY;
-              pos.z = Math.round(pos.z);
-              data.marker.setAttribute("position", pos);
-              data.pos = pos;
+            }, intervalTime)
+    
+            // get target intersection
+            function getNearestIntersection(intersections) {
+              for (var i = 0, l = intersections.length; i < l; i++) {
+                  // ignore cursor itself to avoid flicker && ignore "ignore-ray" class
+                  if (data.target === intersections[i].object.el || intersections[i].object.el.classList.contains("ignore-ray")) { continue; }
+                  return intersections[i];
+              }
+              return null;
             }
-            if (data.pos) {
-              data.info.innerHTML = "X:"+ data.pos.x+" Y:" +(data.pos.y - data.offsetY)+" Z:"+data.pos.z;
-            } else {
-              data.info.innerHTML = "";
-            }
-          } else {
-            data.pos = "";
-            data.marker.setAttribute("visible", false);
-            data.info.innerHTML = "";
           }
-        }, intervalTime)
-
-        // get target intersection
-        function getNearestIntersection(intersections) {
-          for (var i = 0, l = intersections.length; i < l; i++) {
-              // ignore cursor itself to avoid flicker && ignore "ignore-ray" class
-              if (data.target === intersections[i].object.el || intersections[i].object.el.classList.contains("ignore-ray")) { continue; }
-              return intersections[i];
-          }
-          return null;
-        }
+        })
         
       }
     });
@@ -400,7 +423,7 @@
       colorSelector = document.querySelector("#colorSelector");
       colorPicker = document.querySelector("#colorPicker");
       shotButton = document.querySelector("#shotButton");
-      imgPicker = document.querySelector("#imgPicker");
+      cancelButton = document.querySelector("#cancelButton");
       buttonRecenter = document.querySelector("#recenter");
       markerPos = document.querySelector("#markerPos");
 
@@ -418,13 +441,18 @@
         }
       }
 
+      // 言語設定
+      if (_LANG != "ja") {
+        translateWords("en");
+      }
+
       // menu selectorの動作
       menuSelector.onchange = function(e) {
         console.log(this.value);
         if (this.value == "menu") {
           return true;
         } else if (this.value == "new") {
-          var result = confirm("すべてのブロックを削除しますか？");
+          var result = confirm(transMessageWords[_LANG]["deleteAll"]);
           if (result) {
             scene.emit('deleteAll');
           }
@@ -434,25 +462,23 @@
           scene.emit('recenter', {});
           this.value="menu";
           return true;
-        // } else if (this.value == "createBlock") {
-        //   // オリジナルブロック作成用VIDEO設定
-        //   getVideoStream(imgPicker);
-        //   changeMode(_MODE_CREATE);
-        //   this.value="menu";
-        //   return true;
         } else if (this.value == "save") {
-          var result = confirm("セーブします。");
+          var result = confirm(transMessageWords[_LANG]["saveConfirm"]);
           if (result) {
             scene.emit('save');
           }
           this.value="menu";
           return true;
         } else if (this.value == "load") {
-          var result = confirm("ロードします。今のブロックは削除されます。");
+          var result = confirm(transMessageWords[_LANG]["loadConfirm"]);
           if (result) {
             scene.emit('load');
           }
           this.value="menu";
+          return true;
+        } else if (this.value == "full") {
+          this.value="menu";
+          changeMode(_MODE_FULL);
           return true;
         } else if (this.value == "shot") {
           this.value="menu";
@@ -461,7 +487,7 @@
         } else if (this.value == "gltf") {
           this.value="menu";
           if (getUserAgent() == "safari") {
-            var result = confirm("作成前にセーブしますか？");
+            var result = confirm(transMessageWords[_LANG]["modelConfirm"]);
             if (result) {
               scene.emit('save');
             }
@@ -471,12 +497,22 @@
         } else if (this.value == "glb") {
           this.value="menu";
           if (getUserAgent() == "safari") {
-            var result = confirm("作成前にセーブしますか？");
+            var result = confirm(transMessageWords[_LANG]["modelConfirm"]);
             if (result) {
               scene.emit('save');
             }
           }
           scene.emit('exportGlb', {});
+          return true;
+        } else if (this.value == "obj") {
+          this.value="menu";
+          if (getUserAgent() == "safari") {
+            var result = confirm(transMessageWords[_LANG]["modelConfirm"]);
+            if (result) {
+              scene.emit('save');
+            }
+          }
+          scene.emit('exportObj', {});
           return true;
         }
         this.value="menu";
@@ -514,38 +550,28 @@
       
       // 撮影ボタンクリック動作
       shotButton.onclick = function(e) {
-        // not work well...
         console.log("onClick shot");
-        getScreenShot();
+        scene.emit('screenshotrequest')
+        changeMode(_MODE_CRAFT);
+      }
+
+      // 撮影キャンセルボタンクリック動作
+      cancelButton.onclick = function(e) {
+        console.log("onClick shot cancel");
         changeMode(_MODE_CRAFT);
       }
 
     }
-    
-    function getScreenShot() {
-      let filename = "craftblocks"+ getFormatDateTime()+".png";
-
-      let screenshot = document.querySelector("a-scene").components.screenshot
-      screenshot.resize(window.width, window.height);
-      let base64 = screenshot.getCanvas("perspective").toDataURL();
-      let blob = base64toBlob(base64);
-      if (window.navigator.msSaveBlob) {
-        window.navigator.msSaveBlob(blob, filename);
-      } else {
-        imgLink.href = window.URL.createObjectURL(blob);
-        imgLink.download = filename;
-        imgLink.click();
-      }
-    }
-    
+        
     function changeMode(modeNum) {
       // mode change
-      _f_shotMode = modeNum == _MODE_CRAFT? 0 : 1;
-      let statusOfShotElement = _f_shotMode ? "visible" : "hidden";
+      _f_shotMode = modeNum == _MODE_CRAFT ? 0 : 1;
+      let statusOfShotElement = (_f_shotMode && modeNum != _MODE_FULL ? "visible" : "hidden");
       let statusOfCraftElement = _f_shotMode ? "hidden" : "visible";
-      let statusOfCreateElement = modeNum == _MODE_CREATE ? "visible" : "hidden";
       
       // shot mode element
+      shotButton.style.visibility = statusOfShotElement;
+      cancelButton.style.visibility = statusOfShotElement;
       
       // craft mode element
       menuSelector.style.visibility = statusOfCraftElement;
@@ -557,10 +583,6 @@
       }
       buttonRecenter.style.visibility = statusOfCraftElement;
       markerPos.style.visibility = statusOfCraftElement;
-
-      // block create mode element
-      shotButton.style.visibility = statusOfCreateElement;
-      imgPicker.style.visibility = statusOfCreateElement;
 
       // scene entity
       document.querySelector("#target").setAttribute("visible", !_f_shotMode);
@@ -607,32 +629,31 @@
   
   <!-- メニュー -->
   <select id="menuSelector" name="menuselector" style="background-color:white;">
-    <option value="menu" selected>メニュー</option>
-    <option value="new">　ブロック全削除</option>
-<!--
-    <option value="createBlock">ブロック作成</option>
--->
-    <option value="save">　セーブ</option>
-    <option value="load">　ロード</option>
-    <option value="shot">　スクショモード</option>
-    <option value="gltf">　glTF 出力</option>
-    <option value="glb">　GLB 出力</option>
+    <option id="menuMenu" value="menu" selected>メニュー</option>
+    <option id="menuNew" value="new">　ブロック全削除</option>
+    <option id="menuSave" value="save">　セーブ</option>
+    <option id="menuLoad" value="load">　ロード</option>
+    <option id="menuShot" value="shot">　カメラモード</option>
+    <option id="menuFull" value="full">　フルスクリーン</option>
+    <option id="menuGltf" value="gltf">　glTF 出力</option>
+    <option id="menuGlb" value="glb">　GLB 出力</option>
+    <option id="menuObj" value="obj">　OBJ 出力</option>
   </select>
 
   <!-- ブロックの選択ダイアログ -->
   <select id="blockSelector" name="blockselector" style="background-color:white; background-image:url(./images/colorSelector.png);">
-    <option value="water.png">水</option>
-    <option value="sand.png">砂</option>
-    <option value="wood-panel.png">木板</option>
-    <option value="tatami.png">畳</option>
-    <option value="stone.png">砂利</option>
-    <option value="stone2.png">石垣</option>
-    <option value="stone3.png">石畳</option>
-    <option value="grass.png">草</option>
-    <option value="wood-log.png">木</option>
-    <option value="leaves.png">葉っぱ</option>
-    <option value="colorSelector.png" selected>色付き</option>
-    <option value="qrcode.png">QRcode</option>
+    <option id="blockWater" value="water.png">水</option>
+    <option id="blockTatami" value="tatami.png">畳</option>
+    <option id="blockSand" value="sand.png">砂</option>
+    <option id="blockGravel" value="stone.png">砂利</option>
+    <option id="blockStonewall" value="stone2.png">石垣</option>
+    <option id="blockCobble" value="stone3.png">石畳</option>
+    <option id="blockGrass" value="grass.png">草</option>
+    <option id="blockLeaf" value="leaves.png">葉</option>
+    <option id="blockWoodlog" value="wood-log.png">木</option>
+    <option id="blockWoodPanel" value="wood-panel.png">木板</option>
+    <option id="blockColor" value="colorSelector.png" selected>色付き</option>
+    <option id="blockQrcode" value="qrcode.png">QRcode</option>
   </select>
   
   <input type="button" id="recenter" value="ここに移動">
@@ -640,28 +661,26 @@
   <!-- カラーブロックの色選択ダイアログ。iOS用とそれ以外用がある -->
   <input type="color" id="colorPicker" value="#0000FF">
   <select id="colorSelector" name="colorselector" style="background:#0000FF; color:#0000FF">
-    <option value="#0000FF" style="background:#0000FF; color:#0000FF" selected>ブルー</option>
-    <option value="#FFFFFF" style="background:#FFFFFF; color:#FFFFFF">ホワイト</option>
-    <option value="#FFC0CB" style="background:#FFC0CB; color:#FFC0CB">ピンク</option>
-    <option value="#EE82EE" style="background:#EE82EE; color:#EE82EE">バイオレット</option>
-    <option value="#FFFF00" style="background:#FFFF00; color:#FFFF00">イエロー</option>
-    <option value="#FFA500" style="background:#FFA500; color:#FFA500">オレンジ</option>
-    <option value="#808080" style="background:#808080; color:#808080">グレー</option>
-    <option value="#A52A2A" style="background:#A52A2A; color:#A52A2A">ブラウン</option>
-    <option value="#008000" style="background:#008000; color:#008000">グリーン</option>
-    <option value="#FF0000" style="background:#FF0000; color:#FF0000">レッド</option>
-    <option value="#00FF00" style="background:#00FF00; color:#00FF00">ライム</option>
-    <option value="#000000" style="background:#000000; color:#000000">ブラック</option>
+    <option id="colorWhite" value="#FFFFFF" style="background:#FFFFFF; color:#FFFFFF">ホワイト</option>
+    <option id="colorYellow" value="#FFFF00" style="background:#FFFF00; color:#FFFF00">イエロー</option>
+    <option id="colorPink" value="#FFC0CB" style="background:#FFC0CB; color:#FFC0CB">ピンク</option>
+    <option id="colorOrange" value="#FFA500" style="background:#FFA500; color:#FFA500">オレンジ</option>
+    <option id="colorRed" value="#FF0000" style="background:#FF0000; color:#FF0000">レッド</option>
+    <option id="colorViolet" value="#EE82EE" style="background:#EE82EE; color:#EE82EE">バイオレット</option>
+    <option id="colorBrown" value="#A52A2A" style="background:#A52A2A; color:#A52A2A">ブラウン</option>
+    <option id="colorGray" value="#808080" style="background:#808080; color:#808080">グレー</option>
+    <option id="colorLime" value="#00FF00" style="background:#00FF00; color:#00FF00">ライム</option>
+    <option id="colorGreen" value="#008000" style="background:#008000; color:#008000">グリーン</option>
+    <option id="colorBlue" value="#0000FF" style="background:#0000FF; color:#0000FF" selected>ブルー</option>
+    <option id="colorBlack" value="#000000" style="background:#000000; color:#000000">ブラック</option>
   </select>
     
   <!-- 写真撮影用ボタン -->
   <img src="./images/button_shot.png" id="shotButton">
-
-  <!-- オリジナルブロック撮影用VIDEO -->
-  <video id="imgPicker"></video>
+  <img src="./images/cancel.png" id="cancelButton">
 
   <!-- マーカー位置表示 -->
-  <div id="markerPos"></div>
+  <div id="markerPos"><p id="info">読み込み中</p></div>
 
   <!-- debug console -->
   <div id="debugConsole"></div>

@@ -74,6 +74,7 @@
 	    document.body.appendChild(this.link);
 
 	    this.exporter = new THREE.GLTFExporter();
+	    this.objExporter = new THREE.OBJExporter();
 	  },
 
 	  download: function (blob, filename)
@@ -85,7 +86,7 @@
         zip.generateAsync({type:"blob"})
         .then(function(content) {
             link.href = URL.createObjectURL(content)
-            link.download = "scene.zip";
+            link.download = "craftblocks.zip";
             link.click();
         });
 	    } else {
@@ -121,17 +122,34 @@
 	    var self = this;
 	    this.exporter.parse(inputObject3D, function (result) {
 	      if (options && options.binary === true) {
-	        self.downloadBinary(result, 'scene.glb');
+	        self.downloadBinary(result, 'craftblocks.glb');
 	      } else {
 	        var output = JSON.stringify(result, null, 2);
 	        if (self.data.verbose) {
 	          console.log(output);
 	        }
 	  
-	        self.downloadJSON(output, 'scene.gltf');
+	        self.downloadJSON(output, 'craftblocks.gltf');
 	      }
 	    }, options);
 	  },
+	  
+	  exportObj: function ( input ) {
+	    var inpoutObject3D;
+	    // If no entity provided, use the current scene
+	    if (typeof input === 'undefined') {
+	      inputObject3D = this.sceneEl.object3D;
+	    } else if (input instanceof Array) {
+	      inputObject3D = input.map(function (entity) { return entity.object3D; });
+	    } else if (input instanceof NodeList) {
+	      inputObject3D = Array.prototype.slice.call(input).map(function (entity) { return entity.object3D; });
+	    } else {
+	      inputObject3D = input.object3D;
+	    }
+
+	    var result = this.objExporter.parse( inputObject3D );
+	    this.downloadBinary(result, 'craftblocks.obj');
+	  }
 	});
 
 
