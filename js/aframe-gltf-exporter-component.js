@@ -78,43 +78,47 @@
 	    this.stlExporter = new THREE.STLExporter();
 	  },
 
-	  download: function (blob, filename)
+	  download: function (blob, filename, fZip)
 	  {
-	   // if (getUserAgent() == "safari") {
-    //     var link = this.link;
-    //     var zip = new JSZip();
-    //     zip.file(filename, blob);
-    //     zip.generateAsync({type:"blob"})
-    //     .then(function(content) {
-    //         link.href = URL.createObjectURL(content)
-    //         link.download = "craftblocks.zip";
-    //         link.click();
-    //     });
-	   // } else {
+	    if (fZip) {
+        var link = this.link;
+        var zip = new JSZip();
+        zip.file(filename, blob);
+        zip.generateAsync({type:"blob"})
+        .then(function(content) {
+            link.href = URL.createObjectURL(content)
+            link.download = "craftblocks.zip";
+            link.click();
+        })
+      } else {
         this.link.href = URL.createObjectURL( blob );
         this.link.download = filename;
         this.link.click();
-	   // }
+      }
 	  },
 
-	  downloadBinary: function (value, filename) {
-	    this.download(new Blob([value], {type: 'application/octet-stream'}), filename);
+	  downloadZip: function (blob, filename)
+	  {
 	  },
 
-	  downloadGLB: function (value, filename) {
-	    this.download(new Blob([value], {type: 'model/gltf-binary'}), filename);
+	  downloadBinary: function (value, filename, fZip) {
+	    this.download(new Blob([value], {type: 'application/octet-stream'}), filename, fZip);
 	  },
 
-	  downloadGLTF: function (text, filename) {
-	    this.download(new Blob([text], {type: 'model/gltf+json'}), filename);
+	  downloadGLB: function (value, filename, fZip) {
+      this.download(new Blob([value], {type: 'model/gltf-binary'}), filename, fZip);
 	  },
 
-	  downloadJSON: function (text, filename) {
-	    this.download(new Blob([text], {type: 'application/json'}), filename);
+	  downloadGLTF: function (text, filename, fZip) {
+      this.download(new Blob([text], {type: 'model/gltf+json'}), filename, fZip);
 	  },
 
-	  downloadTXT: function (text, filename) {
-	    this.download(new Blob([text], {type: 'text/plain'}), filename);
+	  downloadJSON: function (text, filename, fZip) {
+	    this.download(new Blob([text], {type: 'application/json'}), filename, fZip);
+	  },
+
+	  downloadTXT: function (text, filename, fZip) {
+	    this.download(new Blob([text], {type: 'text/plain'}), filename, fZip);
 	  },
 
 	  export: function ( input, options ) {
@@ -135,14 +139,14 @@
 	    var self = this;
 	    this.exporter.parse(inputObject3D, function (result) {
 	      if (options && options.binary === true) {
-	        self.downloadGLB(result, 'craftblocks.glb');
+	        self.downloadGLB(result, 'craftblocks.glb', false);
 	      } else {
 	        var output = JSON.stringify(result, null, 2);
 	        if (self.data.verbose) {
 	          console.log(output);
 	        }
-	  
-	        self.downloadGLTF(output, 'craftblocks.gltf');
+	        
+	        self.downloadGLTF(output, 'craftblocks.gltf', (getUserAgent()=="safari"));
 	      }
 	    }, options);
 	  },
@@ -161,7 +165,7 @@
 	    }
 
 	    var result = this.objExporter.parse( inputObject3D );
-	    this.downloadTXT(result, 'craftblocks.obj');
+	    this.downloadTXT(result, 'craftblocks.obj', (getUserAgent()=="safari"));
 	  },
 
 	  exportStl: function ( input ) {
@@ -178,7 +182,7 @@
 	    }
 
 	    var result = this.stlExporter.parse( inputObject3D );
-	    this.downloadTXT(result, 'craftblocks.stl');
+	    this.downloadTXT(result, 'craftblocks.stl', (getUserAgent()=="safari"));
 	  }
 
 	});
