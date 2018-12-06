@@ -614,12 +614,13 @@
       document.querySelector("#marker").setAttribute("visible", !_f_shotMode);
       document.querySelector("#floor").setAttribute("visible", !_f_shotMode);
       
+      // ToDo: not work. texture image black out...
       // screen controll
-      if (_f_shotMode) {
-        enterFullscreen();
-      } else {
-        exitFullscreen();
-      }
+      // if (_f_shotMode) {
+      //   enterFullscreen();
+      // } else {
+      //   exitFullscreen();
+      // }
 
     }
     
@@ -663,7 +664,7 @@
     <option id="menuSave" value="save">　セーブ</option>
     <option id="menuLoad" value="load">　ロード</option>
     <option id="menuShot" value="shot">　カメラモード</option>
-    <option id="menuFull" value="full">　フルスクリーン</option>
+    <option id="menuFull" value="full">　スクショモード</option>
     <option id="menuGltf" value="gltf">　glTF 出力</option>
     <option id="menuGlb" value="glb">　GLB 出力</option>
     <option id="menuObj" value="obj">　OBJ 出力</option>

@@ -7,7 +7,7 @@ var transWords = {
     menuSave:" - save",
     menuLoad:" - load",
     menuShot:" - shot mode",
-    menuFull:" - fullscreen",
+    menuFull:" - screenshot mode",
     menuGltf:" - export glTF",
     menuGlb: " - export glb",
     menuObj: " - export obj",
