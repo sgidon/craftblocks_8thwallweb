@@ -75,6 +75,7 @@
 
 	    this.exporter = new THREE.GLTFExporter();
 	    this.objExporter = new THREE.OBJExporter();
+	    this.stlExporter = new THREE.STLExporter();
 	  },
 
 	  download: function (blob, filename)
@@ -100,8 +101,20 @@
 	    this.download(new Blob([value], {type: 'application/octet-stream'}), filename);
 	  },
 
+	  downloadGLB: function (value, filename) {
+	    this.download(new Blob([value], {type: 'model/gltf-binary'}), filename);
+	  },
+
+	  downloadGLTF: function (text, filename) {
+	    this.download(new Blob([text], {type: 'model/gltf+json'}), filename);
+	  },
+
 	  downloadJSON: function (text, filename) {
 	    this.download(new Blob([text], {type: 'application/json'}), filename);
+	  },
+
+	  downloadTXT: function (text, filename) {
+	    this.download(new Blob([text], {type: 'text/plain'}), filename);
 	  },
 
 	  export: function ( input, options ) {
@@ -122,14 +135,14 @@
 	    var self = this;
 	    this.exporter.parse(inputObject3D, function (result) {
 	      if (options && options.binary === true) {
-	        self.downloadBinary(result, 'craftblocks.glb');
+	        self.downloadGLB(result, 'craftblocks.glb');
 	      } else {
 	        var output = JSON.stringify(result, null, 2);
 	        if (self.data.verbose) {
 	          console.log(output);
 	        }
 	  
-	        self.downloadJSON(output, 'craftblocks.gltf');
+	        self.downloadGLTF(output, 'craftblocks.gltf');
 	      }
 	    }, options);
 	  },
@@ -148,8 +161,26 @@
 	    }
 
 	    var result = this.objExporter.parse( inputObject3D );
-	    this.downloadBinary(result, 'craftblocks.obj');
+	    this.downloadTXT(result, 'craftblocks.obj');
+	  },
+
+	  exportStl: function ( input ) {
+	    var inpoutObject3D;
+	    // If no entity provided, use the current scene
+	    if (typeof input === 'undefined') {
+	      inputObject3D = this.sceneEl.object3D;
+	    } else if (input instanceof Array) {
+	      inputObject3D = input.map(function (entity) { return entity.object3D; });
+	    } else if (input instanceof NodeList) {
+	      inputObject3D = Array.prototype.slice.call(input).map(function (entity) { return entity.object3D; });
+	    } else {
+	      inputObject3D = input.object3D;
+	    }
+
+	    var result = this.stlExporter.parse( inputObject3D );
+	    this.downloadTXT(result, 'craftblocks.stl');
 	  }
+
 	});
 
 

@@ -134,10 +134,10 @@
 -->
   <!-- 8thWall Web - Replace the app key here with your own app key -->
   <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
-  <!-- GLTF/GLB Export -->
+  <!-- GLTF/GLB/OBJ/STL Export -->
   <script src="./js/aframe-gltf-exporter-component.js"></script>
   <script src="./js/OBJExporter.js"></script>
-  <script src="./js/jszip.js"></script>
+  <script src="./js/STLExporter.js"></script>
   <!-- user script -->
   <script src="./js/script.js"></script>
 
@@ -343,6 +343,11 @@
           scene.systems['gltf-exporter'].exportObj(blockList);
         })
 
+        scene.addEventListener('exportStl',() => {
+          console.log("emit: exportStl");
+          scene.systems['gltf-exporter'].exportStl(blockList);
+        })
+
         scene.addEventListener('screenshotready', (e) => {
           let filename = "craftblocks"+ getFormatDateTime()+".png";
           imgLink.href = 'data:image/jpeg;base64,' + event.detail;
@@ -524,6 +529,16 @@
           }
           scene.emit('exportObj', {});
           return true;
+        } else if (this.value == "stl") {
+          this.value="menu";
+          if (getUserAgent() == "safari") {
+            var result = confirm(transMessageWords[_LANG]["modelConfirm"]);
+            if (result) {
+              scene.emit('save');
+            }
+          }
+          scene.emit('exportStl', {});
+          return true;
         }
         this.value="menu";
       }
@@ -632,7 +647,11 @@
       <a-cursor id="target" raycaster="objects: .collidable, .block, .floor" collider-check></a-cursor>
     </a-camera>
 
-    <a-plane id="floor" class="floor" rotation="-90 0.01 0" width=25 height=25 opacity=0.5></a-plane>
+    <a-entity id="floor">
+      <a-plane id="base" class="floor" rotation="-90 0.01 0" width=25 height=25 opacity=0.5></a-plane>
+      <a-entity id="x-line" line="color:white; start:-12 0 0; end:12 0 0; opacity:0.5"></a-entity>
+      <a-entity id="z-line" line="color:white; start:0 0 -12; end:0 0 12; opacity:0.5"></a-entity>
+    </a-entity>
     <a-box id="marker" class="non-collidable" color="white" position="0 999 0" wireframe="true" opacity="0.5"></a-box>
         
   </a-scene>
@@ -648,6 +667,7 @@
     <option id="menuGltf" value="gltf">　glTF 出力</option>
     <option id="menuGlb" value="glb">　GLB 出力</option>
     <option id="menuObj" value="obj">　OBJ 出力</option>
+    <option id="menuStl" value="stl">　STL 出力</option>
   </select>
 
   <!-- ブロックの選択ダイアログ -->

@@ -11,6 +11,7 @@ var transWords = {
     menuGltf:" - export glTF",
     menuGlb: " - export glb",
     menuObj: " - export obj",
+    menuStl: " - export stl",
     
     // block selector
     blockWater:    "water",
