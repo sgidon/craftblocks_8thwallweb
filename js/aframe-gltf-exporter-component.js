@@ -79,21 +79,21 @@
 
 	  download: function (blob, filename)
 	  {
-	    if (getUserAgent() == "safari") {
-        var link = this.link;
-        var zip = new JSZip();
-        zip.file(filename, blob);
-        zip.generateAsync({type:"blob"})
-        .then(function(content) {
-            link.href = URL.createObjectURL(content)
-            link.download = "craftblocks.zip";
-            link.click();
-        });
-	    } else {
+	   // if (getUserAgent() == "safari") {
+    //     var link = this.link;
+    //     var zip = new JSZip();
+    //     zip.file(filename, blob);
+    //     zip.generateAsync({type:"blob"})
+    //     .then(function(content) {
+    //         link.href = URL.createObjectURL(content)
+    //         link.download = "craftblocks.zip";
+    //         link.click();
+    //     });
+	   // } else {
         this.link.href = URL.createObjectURL( blob );
         this.link.download = filename;
         this.link.click();
-	    }
+	   // }
 	  },
 
 	  downloadBinary: function (value, filename) {
