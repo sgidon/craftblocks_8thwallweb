@@ -63,7 +63,7 @@ var transMessageWords = {
     loadConfirm: "Load it? All blocks are deleted.",
     loadSuccess: "Loaded.",
     loadFailure: "Loading failed. Please try again.",
-    mdoelConfirm:"Save it before exporting?",
+    modelConfirm:"Save it before exporting?",
     screenshotFailure:"Shooting failed. Please try again.",
   },
   ja:
@@ -75,7 +75,7 @@ var transMessageWords = {
     loadConfirm: "ロードしますか？今のブロックは削除されます。",
     loadSuccess: "ロードしました。",
     loadFailure: "ロードに失敗しました。もう一度実行してください。",
-    mdoelConfirm:"作成前にセーブしますか？",
+    modelConfirm:"作成前にセーブしますか？",
     screenshotFailure:"撮影に失敗しました。もう一度実行してください。",
   },
 };
