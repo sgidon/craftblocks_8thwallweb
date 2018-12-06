@@ -137,7 +137,7 @@
   <!-- GLTF/GLB Export -->
   <script src="./js/aframe-gltf-exporter-component.js"></script>
   <script src="./js/OBJExporter.js"></script>
-  <script src="./js/jszip.min.js"></script>
+  <script src="./js/jszip.js"></script>
   <!-- user script -->
   <script src="./js/script.js"></script>
 
@@ -238,8 +238,9 @@
           scene.appendChild(blockList);
         })
         
-        scene.addEventListener('save',() => {
-          console.log("emit: save");
+        scene.addEventListener('save',(e) => {
+          console.log("emit: save ["+e.detail.savename+"]");
+          let savename = e.detail.savename;
           try {
             let data = {};
             data["datetime"] = new Date();
@@ -256,29 +257,30 @@
               block.push({color: (list[i].getAttribute("color") ? list[i].getAttribute("color") : "")});
               block.push({materialShader: (list[i].getAttribute("material").shader ? list[i].getAttribute("material").shader : "")});
               block.push({materialSrc: (list[i].getAttribute("material").src.id ? list[i].getAttribute("material").src.id : "")});
-              console.log(list[i].getAttribute("material").src);
-              console.log(list[i].getAttribute("material").src.id);
               block.push({opacity: (list[i].getAttribute("opacity") ? list[i].getAttribute("opacity") : "")});
               block.push({position: (list[i].getAttribute("position") ? list[i].getAttribute("position") : "")});
               block.push({scale: (list[i].getAttribute("scale") ? list[i].getAttribute("scale") : "")});
               data["list"].push(block);
             }
-            localStorage.setItem("save1",JSON.stringify(data));
+            localStorage.setItem(savename,JSON.stringify(data));
           } catch(e) {
             console.log(e);
             // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
             alert(transMessageWords[_LANG]["saveFailure"]);
+            return false;
           }
           // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
           alert(transMessageWords[_LANG]["saveSuccess"]);
         })
 
-        scene.addEventListener('load',() => {
-          console.log("emit: load");
+        scene.addEventListener('load',(e) => {
+          console.log("emit: load ["+e.detail.loadname+"]");
           scene.emit("deleteAll");
           
+          let loadname = e.detail.loadname;
+          
           try {
-            let data = JSON.parse(localStorage.getItem("save1"));
+            let data = JSON.parse(localStorage.getItem(loadname));
             let list = data["list"];
             
             // とりあえず動いた、暫定的な書き方。
@@ -304,6 +306,7 @@
             // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
             console.log(e);
             alert(transMessageWords[_LANG]["loadFailure"]);
+            return false;
           }
           // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
           alert(transMessageWords[_LANG]["loadSuccess"]);
@@ -472,14 +475,14 @@
         } else if (this.value == "save") {
           var result = confirm(transMessageWords[_LANG]["saveConfirm"]);
           if (result) {
-            scene.emit('save');
+            scene.emit('save', {savename: "craftblocks.save1"});
           }
           this.value="menu";
           return true;
         } else if (this.value == "load") {
           var result = confirm(transMessageWords[_LANG]["loadConfirm"]);
           if (result) {
-            scene.emit('load');
+            scene.emit('load', {loadname: "craftblocks.save1"});
           }
           this.value="menu";
           return true;
