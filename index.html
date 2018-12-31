@@ -129,12 +129,8 @@
   </style>
 
   <script src="https://cdn.8thwall.com/web/aframe/8frame-0.8.2.min.js"></script>
-<!-- local dev only
-  <script src="./js/8frame-v0.8.2.min.js"></script>
--->
-  <!-- 8thWall Web - Replace the app key here with your own app key -->
-  <script src="https://apps.8thwall.com/xrweb" appKey="lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
-  <!-- GLTF/GLB/OBJ/STL Export -->
+  <script src="//apps.8thwall.com/xrweb?appKey=lqeTy4aV0Q8nXZPoc8zqAkNJYV3yal45uAmGIn3gP3SRzDnms5u2zGz5DnMcAn6JVqeDf1"></script>
+<!-- GLTF/GLB/OBJ/STL Export -->
   <script src="./js/aframe-gltf-exporter-component.js"></script>
   <script src="./js/OBJExporter.js"></script>
   <script src="./js/STLExporter.js"></script>
@@ -153,8 +149,10 @@
     const _MODE_CRAFT=0;
     const _MODE_SHOT=1;
     const _MODE_FULL=2;
+    const _MODE_PICK=3;
     
-    var _f_shotMode = false;
+    var _f_shotMode = 0;
+    var _f_pickMode = 0;
     
     // 各部品はGLOBALに持つようにしてみた
     var menuSelector;
@@ -202,10 +200,33 @@
           if (_f_shotMode) {
             changeMode(_MODE_CRAFT);
             return true;
+          } else if (_f_pickMode) {
+            if (data.block) {
+              blockPick(data.block);
+            }
+            changePickMode(_MODE_CRAFT);
+            return true;
           }
           
           data.touchStartTime = new Date();
         })
+        
+        function blockPick(blockEntity) {
+          console.log(blockEntity);
+          let color = blockEntity.getAttribute("color");
+          if (color) {
+            // 色ブロックモード
+            blockSelector.value = _COLOR_BLOCK_IMG;
+            blockSelector.style.backgroundImage="url(./images/" + _COLOR_BLOCK_IMG + ")";
+            colorSelector.value = color;
+            colorPicker.value = color;
+          } else {
+            // 通常ブロックモード
+            let blockImg = blockEntity.getAttribute("material").src.id;
+            blockSelector.value = blockImg;
+            blockSelector.style.backgroundImage="url(./images/" + blockImg + ")";
+          }
+        }
         
         scene.addEventListener('touchend', () => {
           if ((new Date() - data.touchStartTime) < clickTime && data.pos) {
@@ -312,6 +333,10 @@
           // 本来呼び出し元で実行すべきだろうが、知識不足でこちらで呼ぶ。
           alert(transMessageWords[_LANG]["loadSuccess"]);
         })
+        
+        scene.addEventListener('picker', () => {
+          changePickMode(_MODE_PICK);
+        })
 
         scene.addEventListener('exportGltf',() => {
           console.log("emit: exportGltf");
@@ -388,8 +413,14 @@
                     }
                     data.flgRmBox = true;
                   }
+                  data.block = "";
                 } else {
                   let pos = intersection.point;
+                  if (intersection.object.el.className == 'block') {
+                    data.block = intersection.object.el;
+                  } else {
+                    data.block = '';
+                  }
                   pos.x = Math.round(pos.x);
                   pos.y = Math.round(pos.y - data.offsetY <= 0 ? 0 : pos.y - data.offsetY ) + data.offsetY;
                   pos.z = Math.round(pos.z);
@@ -403,6 +434,7 @@
                 }
               } else {
                 data.pos = "";
+                data.block = "";
                 data.marker.setAttribute("visible", false);
                 data.info.innerHTML = "";
               }
@@ -491,6 +523,10 @@
             scene.emit('load', {loadname: "craftblocks.save1"});
           }
           this.value="menu";
+          return true;
+        } else if (this.value == "picker") {
+          this.value="menu";
+          scene.emit('picker');
           return true;
         } else if (this.value == "full") {
           this.value="menu";
@@ -625,6 +661,25 @@
 
     }
     
+    function changePickMode(modeNum) {
+      _f_pickMode = modeNum == _MODE_CRAFT ? 0 : 1;
+      let targetEntity = document.querySelector("#target");
+      
+      // Pick
+      if (_f_pickMode) {
+        // pickMode
+        targetEntity.emit("startPick");
+        document.querySelector("#marker").setAttribute("opacity", 0);
+      } else {
+        // claftMode
+        targetEntity.emit("endPick");
+        targetEntity.setAttribute("scale", "1 1 1");
+        document.querySelector("#marker").setAttribute("opacity", 1);
+      }
+
+      
+    }
+    
   </script>
 
 </head>
@@ -646,7 +701,10 @@
     </a-assets>
 
     <a-camera position="0 20 20">
-      <a-cursor id="target" raycaster="objects: .collidable, .block, .floor" collider-check></a-cursor>
+      <a-cursor id="target" raycaster="objects: .collidable, .block, .floor" collider-check>
+        <a-animation attribute="scale" dur="500" from="0 0 0" to="1 1 1" easing="linear" begin="startPick" end="endPick" repeat="indefinite">
+        </a-animation>
+      </a-cursor>
     </a-camera>
 
     <a-entity id="floor">
@@ -664,6 +722,7 @@
     <option id="menuNew" value="new">　ブロック全削除</option>
     <option id="menuSave" value="save">　セーブ</option>
     <option id="menuLoad" value="load">　ロード</option>
+    <option id="menuPicker" value="picker">　スポイト</option>
     <option id="menuShot" value="shot">　カメラモード</option>
     <option id="menuFull" value="full">　スクショモード</option>
     <option id="menuGltf" value="gltf">　glTF 出力</option>

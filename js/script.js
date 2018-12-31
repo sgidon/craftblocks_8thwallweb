@@ -2,16 +2,17 @@ var transWords = {
   en:
   {
     // menu selector
-    menuMenu:" menu",
-    menuNew: " - delete all",
-    menuSave:" - save",
-    menuLoad:" - load",
-    menuShot:" - shot mode",
-    menuFull:" - screenshot mode",
-    menuGltf:" - export glTF",
-    menuGlb: " - export glb",
-    menuObj: " - export obj",
-    menuStl: " - export stl",
+    menuMenu:  " menu",
+    menuNew:   " - delete all",
+    menuSave:  " - save",
+    menuLoad:  " - load",
+    menuPicker:" - block picker",
+    menuShot:  " - shot mode",
+    menuFull:  " - screenshot mode",
+    menuGltf:  " - export glTF",
+    menuGlb:   " - export glb",
+    menuObj:   " - export obj",
+    menuStl:   " - export stl",
     
     // block selector
     blockWater:    "water",
