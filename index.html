@@ -379,10 +379,12 @@
           imgLink.href = 'data:image/jpeg;base64,' + event.detail;
           imgLink.download = filename;
           imgLink.click();
+          changeMode(_MODE_CRAFT);
         })
 
         scene.addEventListener('screenshoterror', (e) => {
           console.log("screen shot error");
+          changeMode(_MODE_CRAFT);
           alert(transMessageWords[_LANG]["screenshotFailure"]);
         })
         
@@ -614,7 +616,6 @@
       shotButton.onclick = function(e) {
         console.log("onClick shot");
         scene.emit('screenshotrequest')
-        changeMode(_MODE_CRAFT);
       }
 
       // 撮影キャンセルボタンクリック動作
